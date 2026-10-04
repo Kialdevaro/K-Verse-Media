@@ -2,7 +2,7 @@ name: K-Verse Hyper Automation 24/7
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Jalankan Mesin Otomatisasi & 100 Bot Leaderboard
+      - name: Jalankan Mesin Bot ID & Merek Random 24/7
         env:
           SUPABASE_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_posts"
           SUPABASE_USERS_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_users"
@@ -38,46 +38,71 @@ jobs:
               "Prefer": "resolution=merge-duplicates"
           }
 
-          # 1. Masukkan / Update 100 Bot ke kverse_users menggunakan on_conflict=uid
-          bot_names = ["K-Verse Alpha", "CyberGamer ID", "PixelRunner", "NeonRider", "NovaBot", "QuantumID", "ShadowPlayer", "NexusBot", "StellarGamer", "AeroBot"]
+          # Matriks Merek & ID Acak yang Dinamis
+          brand_prefixes = ["Kialdevaro", "K-Verse", "Cyber", "Pixel", "Neon", "Nova", "Quantum", "Shadow", "Nexus", "Stellar", "Vortex", "Apex"]
+          brand_suffixes = ["Gaming ⚡", "INSIGHT 🌐", "AI 🤖", "Game 🎮", "Group 🚀", "Media 🎬", "Studio 💻", "Hub ✨", "Network 📈", "Elite 🏆"]
+
+          # 1. Inisialisasi 100 Bot dengan Nama Merek & ID Unik di kverse_users
+          bots_cache = []
           for i in range(1, 101):
               b_uid = f"bot-user-{i}"
-              b_name = f"{random.choice(bot_names)} #{i}"
+              b_name = f"{random.choice(brand_prefixes)} {random.choice(brand_suffixes)}"
+              b_email = f"bot{i}@kverse.local"
               b_fid = f"KV-{random.randint(100000, 999999)}"
               b_avatar = f"https://picsum.photos/seed/botavatar-{i}/150/150"
               
+              bots_cache.append({
+                  "uid": b_uid,
+                  "name": b_name,
+                  "avatar": b_avatar
+              })
+
               user_payload = json.dumps({
                   "uid": b_uid,
                   "name": b_name,
-                  "friendId": b_fid,
+                  "email": b_email,
                   "avatar": b_avatar,
-                  "xp": random.randint(10, 500)
+                  "friendId": b_fid,
+                  "xp": random.randint(10, 800)
               }).encode('utf-8')
               
-              # Tambahkan parameter on_conflict=uid agar Supabase melakukan upsert (bukan error duplicate)
               req_u = urllib.request.Request(users_url + "?on_conflict=uid", data=user_payload, headers=headers, method="POST")
               try:
                   urllib.request.urlopen(req_u)
               except Exception as e:
                   pass
 
-          # 2. Auto Posting Bot (2 postingan)
-          prefix = ["Update harian", "Eksplorasi seru", "Tips & trik", "Review santai", "Ngecek performa", "Status project", "Nostalgia gaming", "Setup web", "Eksklusif hari ini"]
-          topics = ["Game PS1 emulator browser", "Layout CSS Blogger responsif", "Katalog HTML5 Playgama", "Shopee Affiliate & Buylink", "CapCut & AI Short Video", "Gran Turismo PSP setup", "Dark cinematic aesthetic", "Kialdevaro Gaming Hub"]
-          suffixes = ["mantap banget! 🚀", "sukses bikin nagih 🔥", "wajib dicoba kawan 🕹️", "lest go! ✨", "keren parah 💯", "semakin produktif 📈", "auto gacor! ⚡"]
-          names = ["Kialdevaro Gaming ⚡", "K-Verse Bot Alpha 🤖", "Kialdevaro INSIGHT 🌐", "Kialdevaro Game Hub 🎮", "Kialdevaro Media 🎬"]
+          # 2. Matriks Bahasa Relate (Kombinasi Dinamis Jutaan Variasi)
+          prefixes = [
+              "Lagi seru banget nih", "Baru tahu kalau", "Pengalaman seru main", "Tips asik buat", 
+              "Ngecek performa", "Eksplorasi tanpa batas di", "Nostalgia parah sama", "Pembahasan santai seputar",
+              "Gak nyangka ternyata", "Rekomendasi terbaik untuk", "Mulai hari ini coba", "Sesi gaming santai dengan"
+          ]
+          topics = [
+              "game klasik PS1 langsung di browser", "layout CSS Blogger responsif anti ribet", 
+              "katalog HTML5 Playgama gratis", "Shopee Affiliate & Buylink digital storefront", 
+              "editing video pendek cinematic pakai CapCut", "setup Gran Turismo PSP biar makin gacor", 
+              "tema dark aesthetic ala street style", "integrasi AI chatbot Dify di situs web"
+          ]
+          suffixes = [
+              "bikin ketagihan terus! 🚀", "sukses bikin performa naik drastis 🔥", "wajib banget dicoba kawan-kawan 🕹️", 
+              "lest go, makin produktif! ✨", "keren parah gak ada obat 💯", "hasilnya bener-bener memuaskan 📈", 
+              "auto gacor dan lancar jaya! ⚡", "paling juara buat dicoba hari ini 🌟"
+          ]
 
+          # Kirim 2 postingan otomatis dari bot/merek random setiap kali aksi berjalan
           for _ in range(2):
-              text = f"{random.choice(prefix)} {random.choice(topics)}, {random.choice(suffixes)}"
+              chosen_bot = random.choice(bots_cache)
+              text = f"{random.choice(prefixes)} {random.choice(topics)}, {random.choice(suffixes)}"
+              
+              # 500rb Kombinasi Gambar Random (Seed 1 s.d 500.000)
               img_id = random.randint(1, 500000)
-              image = f"https://picsum.photos/seed/kverse-{img_id}/600/400"
-              name = random.choice(names)
-              avatar = f"https://picsum.photos/seed/avatar-{img_id}/150/150"
+              image = f"https://picsum.photos/seed/kverse-img-{img_id}/600/400"
 
               post_data = json.dumps({
-                  "author_uid": "bot-system-hyper",
-                  "author_name": name,
-                  "author_avatar": avatar,
+                  "author_uid": chosen_bot["uid"],
+                  "author_name": chosen_bot["name"],
+                  "author_avatar": chosen_bot["avatar"],
                   "text": text,
                   "image": image,
                   "likes": "[]",
@@ -90,7 +115,7 @@ jobs:
               except Exception as e:
                   print("Post error:", e)
 
-          # 3. Tambah 1 - 5 XP acak untuk Owner (KV-230901) dan semua Bot setiap 1 jam
+          # 3. Tambah 1 - 5 XP acak untuk Owner (KV-230901) dan semua Bot setiap siklus
           try:
               req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp,email", headers=headers)
               with urllib.request.urlopen(req_users) as resp:
@@ -110,7 +135,7 @@ jobs:
 
           # 4. Hapus Postingan Bot Berusia Lebih dari 24 Jam
           yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-          del_url = f"{url}?author_uid=eq.bot-system-hyper&created_at=lt.{yesterday}"
+          del_url = f"{url}?author_uid=like.bot-user-*&created_at=lt.{yesterday}"
           del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
           try:
               urllib.request.urlopen(del_req)
