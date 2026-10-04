@@ -72,10 +72,10 @@ jobs:
               
               req_u = urllib.request.Request(users_url + "?on_conflict=uid", data=user_payload, headers=headers, method="POST")
               try:
-                  urllib.request.urlopen(req_u)
-              except:
-                  pass
-
+                 urllib.request.urlopen(req_u)
+          except Exception as e:
+              print("DEBUG ERROR USER:", e)
+          
           # 2. Bank Topik Berdasarkan Karakter (Sangat Luas ala Media Sosial)
           content_pools = {
               "Tech & AI": [
