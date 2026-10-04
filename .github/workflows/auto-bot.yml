@@ -37,11 +37,10 @@ jobs:
               "Content-Type": "application/json"
           }
 
-          # 1. Auto Posting Bot (2 postingan per siklus)
+          # 1. Auto Posting Bot
           prefix = ["Update harian", "Eksplorasi seru", "Tips & trik", "Review santai", "Ngecek performa", "Status project", "Nostalgia gaming", "Setup web", "Eksklusif hari ini"]
           topics = ["Game PS1 emulator browser", "Layout CSS Blogger responsif", "Katalog HTML5 Playgama", "Shopee Affiliate & Buylink", "CapCut & AI Short Video", "Gran Turismo PSP setup", "Dark cinematic aesthetic", "Kialdevaro Gaming Hub"]
           suffixes = ["mantap banget! 🚀", "sukses bikin nagih 🔥", "wajib dicoba kawan 🕹️", "lest go! ✨", "keren parah 💯", "semakin produktif 📈", "auto gacor! ⚡"]
-
           names = ["Kialdevaro Gaming ⚡", "K-Verse Bot Alpha 🤖", "Kialdevaro INSIGHT 🌐", "Kialdevaro Game Hub 🎮", "K-Verse Media 🎬"]
 
           for _ in range(2):
@@ -67,13 +66,15 @@ jobs:
               except Exception as e:
                   print("Post error:", e)
 
-          # 2. Tambah 1 - 5 XP acak untuk Owner (KV-683419) dan Bot setiap 1 jam
+          # 2. Tambah 1 - 5 XP acak untuk Owner (KV-230901) dan Bot setiap 1 jam
           try:
-              req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp", headers=headers)
+              req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp,email", headers=headers)
               with urllib.request.urlopen(req_users) as resp:
                   users = json.loads(resp.read().decode())
                   for u in users:
-                      if u.get('friendId') == 'KV-683419' or 'bot' in str(u.get('uid', '')) or 'bot-system' in str(u.get('uid', '')):
+                      is_owner = u.get('friendId') == 'KV-230901' or (u.get('email') and u.get('email').lower().strip() == 'akunwildrift2020@gmail.com')
+                      is_bot = 'bot' in str(u.get('uid', ''))
+                      if is_owner or is_bot:
                           inc = random.randint(1, 5)
                           new_xp = (u.get('xp') or 100) + inc
                           patch_url = f"{users_url}?uid=eq.{u['uid']}"
