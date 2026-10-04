@@ -1,1 +1,61 @@
+name: K-Verse Hyper Automation 24/7
 
+on:
+  schedule:
+    # Berjalan otomatis setiap 5 menit secara nonstop
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  hyper-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Jalankan Mesin Posting & Pembersihan Otomatis
+        run: |
+          SUPABASE_URL="https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_bots"
+          SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dW50dXVoeGNldHFhZmFhemFpIiwicm9sZSI6ImFub24iisCompositeLCJpYXQiOjE3OTA5NDk2NzgsImV4cCI6MjEwNjUyNTY3OH0.0GKmzbPNYzWEHzuPhAIx-zmGZA6Sf2Y-jEQsD1hH5Kc"
+
+          # Loop untuk membuat beberapa postingan dalam satu siklus (interval 1-2 menit)
+          for i in {1..2}
+          do
+            # 1. Generator Algoritmik 1 Juta+ Kombinasi Kalimat Relevan Kialdevaro
+            PREFIXES=("Update harian" "Eksplorasi seru" "Tips & trik" "Review santai" "Ngecek performa" "Status project" "Nostalgia gaming" "Setup web" "Eksklusif hari ini")
+            TOPICS=("Game PS1 emulator browser" "Layout CSS Blogger responsif" "Katalog HTML5 Playgama" "Shopee Affiliate & Buylink" "CapCut & AI Short Video" "Gran Turismo PSP setup" "Dark cinematic aesthetic" "Kialdevaro Gaming Hub")
+            SUFFIXES=("mantap banget! 🚀" "sukses bikin nagih 🔥" "wajib dicoba kawan 🕹️" "lest go! ✨" "keren parah 💯" "semakin produktif 📈" "auto gacor! ⚡")
+
+            P_IDX=$((RANDOM % ${#PREFIXES[@]}))
+            T_IDX=$((RANDOM % ${#TOPICS[@]}))
+            S_IDX=$((RANDOM % ${#SUFFIXES[@]}))
+
+            TEXT="${PREFIXES[$P_IDX]} ${TOPICS[$T_IDX]}, ${SUFFIXES[$S_IDX]}"
+
+            # 2. Generator 500rb Gambar Berbeda secara Bergantian (Seed Random 1 - 500000)
+            IMG_ID=$(( (RANDOM * 32767 + RANDOM) % 500000 + 1 ))
+            IMAGE="https://picsum.photos/seed/kverse-$IMG_ID/600/400"
+
+            NAMES=("Kialdevaro Gaming ⚡" "K-Verse Bot Alpha 🤖" "Kialdevaro INSIGHT 🌐" "Kialdevaro Game Hub 🎮" "K-Verse Media 🎬")
+            AVATARS=(
+              "https://picsum.photos/seed/avatar1-$IMG_ID/150/150"
+              "https://picsum.photos/seed/avatar2-$IMG_ID/150/150"
+              "https://picsum.photos/seed/avatar3-$IMG_ID/150/150"
+            )
+            N_IDX=$((RANDOM % ${#NAMES[@]}))
+            A_IDX=$((RANDOM % ${#AVATARS[@]}))
+
+            # Kirim Postingan Baru ke Supabase
+            curl -s -X POST "$SUPABASE_URL" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{\"name\": \"${NAMES[$N_IDX]}\", \"avatar\": \"${AVATARS[$A_IDX]}\", \"text\": \"$TEXT\", \"image\": \"$IMAGE\", \"likes\": \"[]\", \"comments\": \"[]\"}"
+
+            # Jeda waktu 60 detik sebelum postingan berikutnya
+            sleep 60
+          done
+
+          # 3. Hapus Otomatis Postingan Bot yang Berusia Lebih dari 24 Jam
+          YESTERDAY=$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%S.000Z')
+          curl -s -X DELETE "$SUPABASE_URL?created_at=lt.$YESTERDAY" \
+          -H "apikey: $SUPABASE_KEY" \
+          -H "Authorization: Bearer $SUPABASE_KEY"
