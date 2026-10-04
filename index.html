@@ -452,7 +452,7 @@
       renderMyGallery();
     }
 
-    // Render Feed / Beranda (Aman dengan fallback terpisah)
+    // Render Feed / Beranda (Dilengkapi Auto-Detect Kolom Bot Apapun)
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
@@ -465,22 +465,25 @@
         let posts = [];
         let bots = [];
 
-        // Ambil data postingan user
         const postsRes = await supabase.from('kverse_posts').select('*');
         if (postsRes.data) posts = postsRes.data;
 
-        // Ambil data bot secara terpisah agar jika tabel kosong/belum siap tidak memblokir user posts
         try {
           const botsRes = await supabase.from('kverse_bots').select('*');
           if (botsRes.data) {
             bots = botsRes.data.map(b => ({
               id: 'bot-' + (b.id || Math.random()),
-              author_name: b.name || b.author_name || 'K-Verse Bot',
-              author_avatar: b.avatar || b.author_avatar || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-              text: b.text || b.content || '',
-              image: b.image || '',
+              // Deteksi otomatis berbagai nama kolom nama/nickname/author
+              author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
+              // Deteksi otomatis berbagai nama kolom avatar/foto profil
+              author_avatar: b.avatar || b.author_avatar || b.photo_profile || b.image_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+              // Deteksi otomatis berbagai nama kolom teks/konten/caption
+              text: b.text || b.content || b.caption || b.message || b.body || '',
+              // Deteksi otomatis berbagai nama kolom gambar AI/foto
+              image: b.image || b.image_url || b.photo || b.img || b.picture || '',
               likes: b.likes || [],
               comments: b.comments || [],
+              created_at: b.created_at || b.time || b.timestamp || new Date().toISOString(),
               isBot: true
             }));
           }
@@ -488,6 +491,7 @@
           console.warn("Tabel kverse_bots belum aktif/kosong");
         }
 
+        // Gabungkan bot posts dan user posts
         cachedPosts = [...bots, ...posts];
 
         if (cachedPosts.length === 0) {
@@ -501,7 +505,6 @@
           const comments = safeParseArray(post.comments);
           const hasImage = post.image && post.image.trim() !== '';
 
-          // Render Postingan
           html += `
             <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
               <div style="align-items: center; display: flex; gap: 8px; margin-bottom: 8px;">
@@ -524,12 +527,9 @@
             </div>
           `;
 
-          // Setiap kelipatan 30 postingan, selipkan Kartu Kombinasi secara bergantian
           if ((index + 1) % 30 === 0) {
             const cycle = Math.floor((index + 1) / 30) % 3;
-            
             if (cycle === 1) {
-              // Kartu Promo 1: Artikel Seputar Gaming
               html += `
                 <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(35, 20, 10)); border-radius: 10px; border: 1px solid rgb(255, 153, 0); padding: 12px; width: 100%; text-align: center;">
                   <div style="color: #ff9900; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🔥 Kialdevaro Gaming Artikel</div>
@@ -538,7 +538,6 @@
                 </div>
               `;
             } else if (cycle === 2) {
-              // Kartu Promo 2: Perpustakaan Game Hub
               html += `
                 <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(10, 30, 35)); border-radius: 10px; border: 1px solid rgb(0, 255, 204); padding: 12px; width: 100%; text-align: center;">
                   <div style="color: #00ffcc; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🎮 Kialdevaro Game Hub</div>
@@ -547,7 +546,6 @@
                 </div>
               `;
             } else {
-              // Kartu 3: Slot Iklan Monetag / Sponsor
               html += `
                 <div style="background: rgb(18, 18, 18); border-radius: 10px; border: 1px solid rgb(51, 51, 51); padding: 12px; width: 100%; text-align: center;">
                   <div style="color: #888888; font-size: 9px; margin-bottom: 4px; text-transform: uppercase;">Sponsor / Iklan Monetag</div>
@@ -570,14 +568,21 @@
       if (!rankBox || !supabase) return;
 
       try {
+        let users = [];
         const { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
-        if (!data || data.length === 0) {
-          rankBox.innerHTML = '<p style="color: #777777; font-size: 13px; text-align: center;">Belum ada data skor.</p>';
-          return;
+        if (data) users = data;
+
+        if (users.length === 0) {
+          users = [
+            { name: 'Kialdevaro Gaming 🤖', friendId: 'KV-683419', xp: 3500, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' },
+            { name: 'K-Verse Bot Alpha ⚡', friendId: 'KV-999001', xp: 2850, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png' },
+            { name: 'CyberExplorer 🌐', friendId: 'KV-777333', xp: 1920, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712128.png' },
+            { name: 'GameMaster ID 🎮', friendId: 'KV-555888', xp: 1400, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' }
+          ];
         }
 
         let html = '';
-        data.forEach((u, idx) => {
+        users.forEach((u, idx) => {
           let badgeColor = '#888';
           if(idx === 0) badgeColor = '#ffD700';
           else if(idx === 1) badgeColor = '#C0C0C0';
@@ -598,7 +603,9 @@
           `;
         });
         rankBox.innerHTML = html;
-      } catch(e) {}
+      } catch(e) {
+        rankBox.innerHTML = '<p style="color: #ff5500; font-size: 12px; text-align: center;">Gagal memuat papan skor.</p>';
+      }
     }
 
     // Render Galeri Profil Pengguna
