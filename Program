@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K-Verse Global Network</title>
+  <style>
+    html, body {
+      background-color: #0b0b0b !important;
+      color: #ffffff !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      font-family: system-ui, -apple-system, sans-serif;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    #kialdevaro-community-hub {
+      max-width: 100% !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      box-sizing: border-box;
+      margin: 0 !important;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      background: rgb(16, 16, 16);
+    }
+
+    #view-feed {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    #feed-box {
+      flex: 1;
+      max-height: none !important;
+      overflow-y: auto;
+    }
+
+    .action-btn {
+      cursor: pointer !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WIDGET UTAMA K-VERSE FULL LAYAR -->
+  <div id="kialdevaro-community-hub">
+    
+    <!--HEADER-->
+    <div style="align-items: center; border-bottom: 1px solid rgb(34, 34, 34); display: flex; justify-content: space-between; margin-bottom: 14px; padding-bottom: 12px;">
+      <div>
+        <h3 style="color: #00ffcc; font-size: 17px; font-weight: 700; margin: 0px 0px 2px;">🌐 K-Verse Global Network</h3>
+        <span style="color: #888888; font-size: 12px;">Linimasa Komunitas &amp; Papan Skor Supabase Cloud (Live 24/7)</span>
+      </div>
+      <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_top" style="background: rgb(255, 85, 0); border-radius: 6px; color: white; font-size: 12px; font-weight: bold; padding: 7px 14px; text-decoration: none;">Game Hub</a>
+    </div>
+
+    <!--NAVIGASI TAB-->
+    <div style="display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); margin-bottom: 14px;">
+      <button id="nav-feed" class="nav-tab-btn" data-tab="feed" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(0, 255, 204); color: #00ffcc; cursor: pointer; font-size: 13px; font-weight: bold; padding: 10px;">Beranda</button>
+      <button id="nav-rank" class="nav-tab-btn" data-tab="rank" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 153, 0); color: #ff9900; cursor: pointer; font-size: 13px; font-weight: bold; padding: 10px;">Papan Skor</button>
+      <button id="nav-profile" class="nav-tab-btn" data-tab="profile" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 193, 7); color: #ffc107; cursor: pointer; font-size: 13px; font-weight: bold; padding: 10px;">Profil Saya</button>
+    </div>
+
+    <!--1. TAB BERANDA-->
+    <div id="view-feed" style="display: flex; flex-direction: column; flex: 1;">
+      <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 14px; padding: 14px; flex-shrink: 0;">
+        <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 14px; height: 75px; margin-bottom: 10px; outline: none; padding: 10px; resize: none; width: 100%;"></textarea>
+        
+        <div style="align-items: center; display: flex; justify-content: space-between;">
+          <input accept="image/*" id="post-file" style="display: none;" type="file" />
+          <button id="select-img-btn" class="action-btn" style="background: rgb(34, 34, 34); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: #00ffcc; font-size: 13px; padding: 8px 14px;">🖼 Pilih Foto</button>
+          <button id="submit-post-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 13px; font-weight: bold; padding: 8px 18px;">Posting</button>
+        </div>
+
+        <div id="preview-box" style="display: none; height: 85px; margin-top: 10px; position: relative; width: 85px;">
+          <img id="preview-tag" src="" style="border-radius: 6px; height: 100%; object-fit: cover; width: 100%;" />
+          <button id="clear-img-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 11px; height: 24px; position: absolute; right: -6px; top: -6px; width: 24px;">X</button>
+        </div>
+        <span id="upload-status" style="color: #ff9900; display: none; font-size: 12px; margin-top: 8px;">Sedang memproses &amp; mengompres foto...</span>
+      </div>
+
+      <div id="feed-box" style="display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px; flex: 1;">
+        <p style="color: #777777; font-size: 14px; padding: 30px; text-align: center;">Memuat linimasa global...</p>
+      </div>
+    </div>
+
+    <!--2. TAB PAPAN SKOR-->
+    <div id="view-rank" style="display: none; flex: 1;">
+      <h4 style="color: #ff9900; font-size: 15px; font-weight: 600; margin: 0px 0px 10px;">Papan Skor Global Anggota</h4>
+      <div id="rank-box" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1;"></div>
+    </div>
+
+    <!--3. TAB PROFIL-->
+    <div id="view-profile" style="display: none; flex: 1;">
+      <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 14px; padding: 14px; flex-shrink: 0;">
+        <div style="align-items: center; display: flex; gap: 12px;">
+          <div id="avatar-trigger" class="action-btn" style="position: relative;" title="Ketuk untuk ganti foto profil">
+            <img id="my-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" style="border-radius: 50%; border: 2px solid rgb(255, 193, 7); height: 56px; object-fit: cover; width: 56px;" />
+            <span style="background: rgb(255, 85, 0); border-radius: 50%; bottom: 0px; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; height: 20px; position: absolute; right: 0px; width: 20px;">📷</span>
+          </div>
+          <input accept="image/*" id="avatar-file-input" style="display: none;" type="file" />
+          <div>
+            <h4 id="my-name" style="color: #ffc107; font-size: 15px; margin: 0px 0px 3px;">Tamu (Belum Login)</h4>
+            <span id="my-id" style="color: #00ffcc; display: block; font-size: 12px; font-weight: bold;">ID: #KV-000000</span>
+            <span id="my-xp" style="color: #aaaaaa; font-size: 12px;">Total XP: 0</span>
+          </div>
+        </div>
+        <button id="auth-btn" class="action-btn" style="background: white; border: none; border-radius: 6px; color: black; font-size: 13px; font-weight: bold; padding: 8px 16px;">Login Google</button>
+      </div>
+
+      <span id="avatar-upload-status" style="color: #ff9900; display: none; font-size: 12px; margin-bottom: 8px; text-align: center;">Menyimpan foto profil baru...</span>
+      <h4 style="color: #ffc107; font-size: 14px; margin: 0px 0px 8px; flex-shrink: 0;">Galeri Postingan Anda (Maks. 50 Foto)</h4>
+      <div id="my-gallery" style="display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); overflow-y: auto; flex: 1;"></div>
+    </div>
+
+  </div>
+
+  <!--MODAL DETAIL POSTINGAN-->
+  <div id="detail-modal" style="align-items: center; background: rgba(0, 0, 0, 0.85); box-sizing: border-box; display: none; height: 100%; justify-content: center; left: 0px; padding: 14px; position: fixed; top: 0px; width: 100%; z-index: 99999;">
+    <div style="background: rgb(22, 22, 22); border-radius: 12px; border: 1px solid rgb(51, 51, 51); max-height: 85vh; max-width: 450px; overflow-y: auto; padding: 16px; position: relative; width: 100%;">
+      <button id="close-modal-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 13px; font-weight: bold; height: 30px; position: absolute; right: 12px; top: 12px; width: 30px;">X</button>
+      
+      <div id="modal-img-box" style="background: rgb(0, 0, 0); border-radius: 6px; display: none; margin-bottom: 12px; overflow: hidden; text-align: center;">
+        <img id="modal-img-tag" src="" style="max-height: 240px; max-width: 100%; object-fit: contain;" />
+      </div>
+
+      <p id="modal-text-tag" style="color: white; font-size: 14px; line-height: 1.5; margin: 0px 0px 12px; word-break: break-word;"></p>
+      
+      <div style="align-items: center; border-bottom: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px;">
+        <button id="modal-like-btn" class="action-btn" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 8px; color: #ff9900; font-size: 14px; font-weight: bold; padding: 6px 12px; white-space: nowrap;">❤️ Suka (0)</button>
+        <button id="modal-del-btn" class="action-btn" style="background: rgba(255, 85, 0, 0.2); border-radius: 4px; border: 1px solid rgb(255, 85, 0); color: #ff5500; display: none; font-size: 12px; font-weight: bold; padding: 6px 12px;">Hapus Post</button>
+      </div>
+
+      <div style="color: #aaaaaa; font-size: 13px; font-weight: bold; margin-bottom: 6px;">Komentar:</div>
+      <div id="modal-comments-box" style="background: rgb(13, 13, 13); border-radius: 6px; display: flex; flex-direction: column; font-size: 13px; gap: 8px; margin-bottom: 12px; max-height: 130px; overflow-y: auto; padding: 10px;"></div>
+      
+      <div style="display: flex; gap: 8px;">
+        <input id="modal-comment-input" placeholder="Tulis komentar..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: white; flex: 1; font-size: 13px; outline: none; padding: 10px;" type="text" />
+        <button id="modal-comment-submit-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 13px; font-weight: bold; padding: 10px 16px;">Kirim</button>
+      </div>
+    </div>
+  </div>
+
+  <!--SKRIP LOGIKA & INTERAKSI-->
+  <script>
+    window.KVerseUI = {
+      switchTab: function(tab) {
+        ['feed', 'rank', 'profile'].forEach(t => {
+          const el = document.getElementById('view-' + t);
+          if(el) el.style.display = (t === tab) ? 'flex' : 'none';
+        });
+        if(tab === 'feed' && typeof window.KVerseApp === 'object' && window.KVerseApp.renderFeed) window.KVerseApp.renderFeed();
+        if(tab === 'rank' && typeof window.KVerseApp === 'object' && window.KVerseApp.renderLeaderboard) window.KVerseApp.renderLeaderboard();
+        if(tab === 'profile' && typeof window.KVerseApp === 'object' && window.KVerseApp.renderProfile) window.KVerseApp.renderProfile();
+      },
+      clearImg: function() {
+        if(typeof window.KVerseApp === 'object') window.KVerseApp.tempBase64 = null;
+        const pBox = document.getElementById('preview-box');
+        const pFile = document.getElementById('post-file');
+        if(pBox) pBox.style.display = 'none';
+        if(pFile) pFile.value = '';
+      },
+      closeModal: function() {
+        const modal = document.getElementById('detail-modal');
+        if(modal) modal.style.display = 'none';
+        if(typeof window.KVerseApp === 'object') window.KVerseApp.activePost = null;
+      }
+    };
+
+    document.addEventListener('click', function(e) {
+      const tabBtn = e.target.closest('.nav-tab-btn');
+      if (tabBtn) {
+        window.KVerseUI.switchTab(tabBtn.getAttribute('data-tab'));
+        return;
+      }
+
+      const openBtn = e.target.closest('.open-post-btn');
+      if (openBtn) {
+        const postId = openBtn.getAttribute('data-id');
+        if(typeof window.KVerseApp === 'object' && window.KVerseApp.openDetail) {
+          window.KVerseApp.openDetail(postId);
+        }
+        return;
+      }
+
+      if (e.target.id === 'select-img-btn') {
+        document.getElementById('post-file').click();
+        return;
+      }
+
+      if (e.target.id === 'clear-img-btn') {
+        window.KVerseUI.clearImg();
+        return;
+      }
+
+      if (e.target.id === 'submit-post-btn') {
+        if(typeof window.KVerseApp === 'object' && window.KVerseApp.submitPost) window.KVerseApp.submitPost();
+        return;
+      }
+
+      if (e.target.id === 'auth-btn') {
+        if(typeof window.KVerseApp === 'object' && window.KVerseApp.toggleAuth) window.KVerseApp.toggleAuth();
+        return;
+      }
+
+      if (e.target.closest('#avatar-trigger')) {
+        document.getElementById('avatar-file-input').click();
+        return;
+      }
+
+      if (e.target.id === 'close-modal-btn') {
+        window.KVerseUI.closeModal();
+        return;
+      }
+
+      if (e.target.id === 'modal-like-btn') {
+        if(typeof window.KVerseApp === 'object' && window.KVerseApp.pressLike) window.KVerseApp.pressLike();
+        return;
+      }
+
+      if (e.target.id === 'modal-del-btn') {
+        if(typeof window.KVerseApp === 'object' && window.KVerseApp.pressDelete) window.KVerseApp.pressDelete();
+        return;
+      }
+
+      if (e.target.id === 'modal-comment-submit-btn') {
+        if(typeof window.KVerseApp === 'object' && window.KVerseApp.submitComment) window.KVerseApp.submitComment();
+        return;
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const postFileInput = document.getElementById('post-file');
+      if (postFileInput) {
+        postFileInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if(file && typeof window.KVerseApp === 'object' && window.KVerseApp.handleImageSelect) {
+            window.KVerseApp.handleImageSelect(file);
+          }
+        });
+      }
+
+      const avatarFileInput = document.getElementById('avatar-file-input');
+      if (avatarFileInput) {
+        avatarFileInput.addEventListener('change', function(e) {
+          if(typeof window.KVerseApp === 'object' && window.KVerseApp.uploadNewAvatar) {
+            window.KVerseApp.uploadNewAvatar(e);
+          }
+        });
+      }
+
+      const commentInput = document.getElementById('modal-comment-input');
+      if (commentInput) {
+        commentInput.addEventListener('keypress', function(e) {
+          if(e.key === 'Enter' && typeof window.KVerseApp === 'object' && window.KVerseApp.submitComment) {
+            window.KVerseApp.submitComment();
+          }
+        });
+      }
+    });
+  </script>
+
+  <!--SKRIP DATABASE SUPABASE & FIREBASE CLOUD-->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    let currentUser = null;
+    let activePost = null;
+    let tempBase64 = null;
+    let cachedPosts = [];
+    let supabase = null;
+    let auth = null;
+    let provider = null;
+
+    function formatNum(num) {
+      return new Intl.NumberFormat('id-ID').format(num || 0);
+    }
+
+    function formatDate(timestamp) {
+      if(!timestamp) return '';
+      const d = new Date(timestamp);
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function safeParseArray(val) {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    try {
+      const firebaseConfig = {
+        apiKey: "AIzaSyCo8ggig1Gk2ioaTa3lb_QtHIawfb4DNt8",
+        authDomain: "kialdevaro-gaming.firebaseapp.com",
+        projectId: "kialdevaro-gaming",
+        storageBucket: "kialdevaro-gaming.firebasestorage.app",
+        messagingSenderId: "132103359095",
+        appId: "1:132103359095:web:348c6caa7809441fc5d472",
+        measurementId: "G-S9VS5FVR8L"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      provider = new GoogleAuthProvider();
+
+      const SUPABASE_URL = "https://szuntuuhxcetqafaazai.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dW50dXVoeGNldHFhZmFhemFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NDk2NzgsImV4cCI6MjEwNjUyNTY3OH0.0GKmzbPNYzWEHzuPhAIx-zmGZA6Sf2Y-jEQsD1hH5Kc";
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      onAuthStateChanged(auth, async (user) => {
+        if(user) await initUser(user);
+        else { currentUser = null; renderProfile(); }
+      });
+    } catch(e) {}
+
+    const OWNER_EMAIL = "akunwildrift2020@gmail.com";
+    const OWNER_FRIEND_ID = "KV-683419";
+
+    function isUserOwner(user) {
+      if (!user) return false;
+      const emailMatch = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
+      const idMatch = user.friendId && user.friendId.trim() === OWNER_FRIEND_ID;
+      return emailMatch || idMatch;
+    }
+
+    async function checkOrganicXp() {
+      if (!currentUser || isUserOwner(currentUser) || !supabase) return;
+      const storageKey = 'kverse_last_organic_xp_' + currentUser.uid;
+      const lastTime = parseInt(localStorage.getItem(storageKey) || '0', 10);
+      const now = Date.now();
+      const interval = 30 * 60 * 1000;
+
+      if (now - lastTime >= interval) {
+        const earned = Math.floor(Math.random() * 21) + 30;
+        currentUser.xp = (currentUser.xp || 0) + earned;
+        localStorage.setItem(storageKey, now);
+
+        try {
+          await supabase.from('kverse_users').update({ xp: currentUser.xp }).eq('uid', currentUser.uid);
+          renderProfile();
+        } catch (e) {}
+      }
+    }
+
+    function compressAndResizeImage(file, callback, maxWidth = 350, quality = 0.4) {
+      const reader = new FileReader();
+      reader.onerror = function() { alert("Gagal membaca file gambar."); };
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onerror = function() { alert("Format gambar tidak didukung."); };
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+          } else {
+            if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          callback(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function toggleAuth() {
+      if(!auth || !provider) {
+        alert("Autentikasi belum siap.");
+        return;
+      }
+      if(!currentUser) {
+        try {
+          const res = await signInWithPopup(auth, provider);
+          await initUser(res.user);
+        } catch(e) { alert("Login gagal: " + e.message); }
+      } else {
+        try { await signOut(auth); } catch(e) {}
+        currentUser = null;
+        renderProfile();
+      }
+    }
+
+    async function initUser(user) {
+      if (!supabase) return;
+      try {
+        const isOwnerEmail = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
+        const assignedFriendId = isOwnerEmail ? OWNER_FRIEND_ID : ('KV-' + Math.floor(100000 + Math.random() * 899999));
+
+        const { data: existing } = await supabase
+          .from('kverse_users')
+          .select('*')
+          .eq('uid', user.uid)
+          .single();
+
+        if(existing) {
+          currentUser = existing;
+          if(isOwnerEmail && currentUser.friendId !== OWNER_FRIEND_ID) {
+            currentUser.friendId = OWNER_FRIEND_ID;
+            await supabase.from('kverse_users').update({ friendId: OWNER_FRIEND_ID }).eq('uid', user.uid);
+          }
+        } else {
+          currentUser = {
+            uid: user.uid,
+            email: user.email,
+            friendId: assignedFriendId,
+            username: user.displayName || 'Kialdevaro Member',
+            avatar: user.photoURL || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
+            xp: 0,
+            last_active: Date.now()
+          };
+          await supabase.from('kverse_users').upsert([currentUser]);
+        }
+
+        await checkOrganicXp();
+        renderProfile();
+      } catch(e) {}
+    }
+
+    function uploadNewAvatar(e) {
+      if(!currentUser) {
+        alert("Silakan Login Google terlebih dahulu untuk mengganti foto profil.");
+        return;
+      }
+      const file = e.target.files[0];
+      if(file) {
+        const statusEl = document.getElementById('avatar-upload-status');
+        if(statusEl) statusEl.style.display = 'block';
+        compressAndResizeImage(file, async (base64) => {
+          currentUser.avatar = base64;
+          const avTag = document.getElementById('my-avatar');
+          if(avTag) avTag.src = base64;
+          try {
+            if (supabase) {
+              await supabase.from('kverse_users').update({ avatar: base64 }).eq('uid', currentUser.uid);
+            }
+            if(statusEl) statusEl.style.display = 'none';
+            renderFeed();
+          } catch(err) {
+            if(statusEl) statusEl.style.display = 'none';
+          }
+        }, 250, 0.4);
+      }
+    }
+
+    async function getCloudBots() {
+      if (!supabase) return [];
+      try {
+        const { data: bots, error } = await supabase
+          .from('kverse_bots')
+          .select('*')
+          .order('createdAt', { ascending: false })
+          .limit(30);
+
+        if (error) throw error;
+        return bots || [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    async function renderLeaderboard() {
+      const rankBox = document.getElementById('rank-box');
+      if(!rankBox) return;
+      rankBox.innerHTML = '<p style="color: #777; font-size: 14px; text-align: center;">Memuat papan skor...</p>';
+      
+      let allUsers = [];
+      try {
+        const bots = await getCloudBots();
+        if(Array.isArray(bots)) allUsers.push(...bots);
+      } catch(e) {}
+
+      try {
+        if (supabase) {
+          const { data: users } = await supabase
+            .from('kverse_users')
+            .select('*')
+            .limit(50);
+
+          if(users) {
+            users.forEach(u => {
+              allUsers.push({
+                id: u.uid,
+                source: 'supabase',
+                authorName: u.username || u.authorname || 'Member',
+                authorFriendId: u.friendId || u.friendid || 'KV-000000',
+                authorAvatar: u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
+                xp: u.xp || 0,
+                email: u.email
+              });
+            });
+          }
+        }
+      } catch(err) {}
+
+      allUsers.sort((a, b) => b.xp - a.xp);
+
+      let html = '';
+      allUsers.slice(0, 30).forEach((u, idx) => {
+        const isMe = currentUser && (u.id === currentUser.uid || u.email === currentUser.email);
+        const isOwnerAcc = isUserOwner(u);
+        const displayName = isOwnerAcc ? `${u.authorName}` : (isMe ? `${u.authorName} (Anda)` : u.authorName);
+        const borderStyle = isMe ? 'border: 1px solid #00ffcc;' : 'border: 1px solid #262626;';
+
+        html += `
+          <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; ${borderStyle} display: flex; justify-content: space-between; padding: 12px 14px;">
+            <div style="align-items: center; display: flex; gap: 12px;">
+              <span style="color: ${idx===0?'#ffd700':idx===1?'#c0c0c0':idx===2?'#cd7f32':'#777'}; font-size: 14px; font-weight: bold; width: 24px;">#${idx+1}</span>
+              <img src="${u.authorAvatar}" style="border-radius: 50%; height: 40px; object-fit: cover; width: 40px;" />
+              <div>
+                <div style="color: ${isMe?'#00ffcc':'white'}; font-size: 14px; font-weight: bold;">${displayName}</div>
+                <span style="color: #888; font-size: 12px;">${u.authorFriendId}</span>
+              </div>
+            </div>
+            <span style="color: #ff9900; font-size: 14px; font-weight: bold;">${formatNum(u.xp)} XP</span>
+          </div>
+        `;
+      });
+      rankBox.innerHTML = html || '<p style="color: #777; font-size: 14px; text-align: center;">Belum ada data.</p>';
+    }
+
+    async function renderProfile() {
+      const nameEl = document.getElementById('my-name');
+      if(!nameEl) return;
+
+      if(!currentUser) {
+        nameEl.innerText = "Tamu (Belum Login)";
+        document.getElementById('my-id').innerText = "ID: #KV-000000";
+        document.getElementById('my-xp').innerText = "Total XP: 0";
+        document.getElementById('my-avatar').src = "https://cdn-icons-png.flaticon.com/512/147/147144.png";
+        document.getElementById('auth-btn').innerText = "Login Google";
+        document.getElementById('my-gallery').innerHTML = '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Login untuk melihat galeri.</p>';
+        return;
+      }
+
+      nameEl.innerText = currentUser.username;
+      document.getElementById('my-id').innerText = `ID: ${currentUser.friendId}`;
+      document.getElementById('my-xp').innerText = `Total XP: ${formatNum(currentUser.xp)}`;
+      document.getElementById('my-avatar').src = currentUser.avatar;
+      document.getElementById('auth-btn').innerText = "Keluar";
+
+      const gallery = document.getElementById('my-gallery');
+      gallery.innerHTML = '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Memuat galeri...</p>';
+      try {
+        if (supabase) {
+          const { data: posts } = await supabase
+            .from('kverse_posts')
+            .select('*')
+            .eq('uid', currentUser.uid)
+            .limit(50);
+
+          let myPostsHtml = '';
+          if(posts) {
+            posts.forEach(p => {
+              const imgUrl = p.imageUrl || p.imageurl;
+              if(imgUrl) {
+                myPostsHtml += `<div style="background:#000; border-radius:6px; height:95px; overflow:hidden;"><img src="${imgUrl}" style="height:100%; object-fit:cover; width:100%;" /></div>`;
+              }
+            });
+          }
+          gallery.innerHTML = myPostsHtml || '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Belum ada postingan foto.</p>';
+        }
+      } catch(e) {
+        gallery.innerHTML = '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Gagal memuat galeri.</p>';
+      }
+    }
+
+    function openDetail(id) {
+      const p = cachedPosts.find(x => String(x.id) === String(id));
+      if(!p) return;
+      activePost = p;
+
+      const imgBox = document.getElementById('modal-img-box');
+      const imgTag = document.getElementById('modal-img-tag');
+      if(p.imageUrl) {
+        imgTag.src = p.imageUrl;
+        if(imgBox) imgBox.style.display = 'block';
+      } else {
+        if(imgBox) imgBox.style.display = 'none';
+      }
+
+      const textTag = document.getElementById('modal-text-tag');
+      if(textTag) textTag.innerText = p.content || '';
+      
+      const hasLiked = currentUser && activePost.likedBy && activePost.likedBy.includes(currentUser.uid);
+      const likeBtn = document.getElementById('modal-like-btn');
+      if(likeBtn) {
+        likeBtn.innerHTML = `❤️ Suka (${formatNum(activePost.likes || 0)})`;
+        likeBtn.style.color = hasLiked ? '#ff5500' : '#ff9900';
+        likeBtn.style.borderColor = hasLiked ? '#ff5500' : 'rgba(255,153,0,0.4)';
+      }
+
+      const delBtn = document.getElementById('modal-del-btn');
+      if(delBtn) {
+        if(currentUser && activePost.uid === currentUser.uid) {
+          delBtn.style.display = 'block';
+        } else {
+          delBtn.style.display = 'none';
+        }
+      }
+
+      renderModalComments();
+      const modal = document.getElementById('detail-modal');
+      if(modal) modal.style.display = 'flex';
+    }
+
+    async function pressLike() {
+      if(!activePost) return;
+      if(!currentUser) {
+        alert("Silakan Login Google terlebih dahulu untuk menyukai postingan!");
+        return;
+      }
+      if(!activePost.likedBy) activePost.likedBy = [];
+
+      const index = activePost.likedBy.indexOf(currentUser.uid);
+      const likeBtn = document.getElementById('modal-like-btn');
+
+      if(index > -1) {
+        activePost.likedBy.splice(index, 1);
+        activePost.likes = Math.max(0, (activePost.likes || 1) - 1);
+      } else {
+        activePost.likedBy.push(currentUser.uid);
+        activePost.likes = (activePost.likes || 0) + 1;
+      }
+
+      const hasLiked = activePost.likedBy.includes(currentUser.uid);
+      if(likeBtn) {
+        likeBtn.innerHTML = `❤️ Suka (${formatNum(activePost.likes || 0)})`;
+        likeBtn.style.color = hasLiked ? '#ff5500' : '#ff9900';
+        likeBtn.style.borderColor = hasLiked ? '#ff5500' : 'rgba(255,153,0,0.4)';
+      }
+
+      if (supabase) {
+        if(activePost.source === 'user') {
+          try {
+            await supabase.from('kverse_posts').update({ 
+              likes: activePost.likes, 
+              likedBy: activePost.likedBy 
+            }).eq('id', activePost.id);
+          } catch(e) {}
+        } else {
+          try {
+            await supabase.from('kverse_bots').update({ 
+              likes: activePost.likes, 
+              likedBy: activePost.likedBy 
+            }).eq('id', activePost.id);
+          } catch(e) {}
+        }
+      }
+      renderFeed();
+    }
+
+    async function pressDelete() {
+      if(!activePost || !currentUser || !supabase) return;
+      if(activePost.uid !== currentUser.uid) {
+        alert("Tidak memiliki izin.");
+        return;
+      }
+      if(!confirm("Yakin ingin menghapus postingan ini?")) return;
+
+      if(activePost.source === 'user') {
+        try {
+          await supabase.from('kverse_posts').delete().eq('id', activePost.id);
+        } catch(e) {
+          alert("Gagal menghapus.");
+          return;
+        }
+      }
+      closeModal();
+      renderFeed();
+    }
+
+    function renderModalComments() {
+      const box = document.getElementById('modal-comments-box');
+      if(!box) return;
+      box.innerHTML = '';
+      
+      const commentsList = safeParseArray(activePost ? activePost.comments : []);
+      if(commentsList.length === 0) {
+        box.innerHTML = '<span style="color:#777; text-align:center; padding:8px;">Belum ada komentar.</span>';
+        return;
+      }
+
+      let html = '';
+      commentsList.forEach(c => {
+        html += `<div><strong style="color:#00ffcc;">${c.user || 'Member'}:</strong> <span style="color:#ccc;">${c.text || ''}</span></div>`;
+      });
+      box.innerHTML = html;
+    }
+
+    async function submitComment() {
+      if(!activePost) return;
+      if(!currentUser) {
+        alert("Silakan Login Google terlebih dahulu untuk menulis komentar!");
+        return;
+      }
+      const input = document.getElementById('modal-comment-input');
+      const val = input ? input.value.trim() : '';
+      if(!val) return;
+
+      if(!activePost.comments) activePost.comments = [];
+      activePost.comments = safeParseArray(activePost.comments);
+      activePost.comments.push({ user: currentUser.username, text: val });
+      if(input) input.value = '';
+
+      renderModalComments();
+
+      if (supabase) {
+        if(activePost.source === 'user') {
+          try {
+            await supabase.from('kverse_posts').update({ comments: activePost.comments }).eq('id', activePost.id);
+          } catch(e) {}
+        } else {
+          try {
+            await supabase.from('kverse_bots').update({ comments: activePost.comments }).eq('id', activePost.id);
+          } catch(e) {}
+        }
+      }
+      renderFeed();
+    }
+
+    async function renderFeed() {
+      const feedBox = document.getElementById('feed-box');
+      if(!feedBox) return;
+      feedBox.innerHTML = '<p style="color: #777; font-size: 14px; text-align: center;">Memuat linimasa...</p>';
+      
+      let posts = [];
+      try {
+        const bots = await getCloudBots();
+        if(Array.isArray(bots)) posts.push(...bots);
+      } catch(e) {}
+
+      try {
+        if (supabase) {
+          const { data: userPosts } = await supabase
+            .from('kverse_posts')
+            .select('*');
+
+          if(userPosts) {
+            for(let up of userPosts) {
+              if(up.source === 'user' && up.likes < 1000) {
+                const randomGrowth = Math.floor(Math.random() * 3) + 1;
+                up.likes = (up.likes || 0) + randomGrowth;
+                supabase.from('kverse_posts').update({ likes: up.likes }).eq('id', up.id).then(()=>{});
+              }
+            }
+            posts.push(...userPosts);
+          }
+        }
+      } catch(e) {}
+
+      posts = posts.map(p => ({
+        id: p.id,
+        source: p.source || 'user',
+        uid: p.uid,
+        email: p.email,
+        authorName: p.authorName || p.authorname || 'Member',
+        authorFriendId: p.authorFriendId || p.authorfriendid || 'KV-000000',
+        authorAvatar: p.authorAvatar || p.authoravatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
+        content: p.content,
+        imageUrl: p.imageUrl || p.imageurl || '',
+        likes: p.likes || 0,
+        likedBy: safeParseArray(p.likedBy || p.likedby),
+        comments: safeParseArray(p.comments),
+        createdAt: p.createdAt || p.createdat || Date.now()
+      }));
+
+      posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      cachedPosts = posts;
+
+      let html = '';
+      posts.forEach(p => {
+        const formattedDate = formatDate(p.createdAt);
+        const formattedLikes = formatNum(p.likes);
+        const commentsArr = safeParseArray(p.comments);
+        const formattedComments = formatNum(commentsArr.length);
+
+        html += `
+          <div style="background: rgb(22, 22, 22); border-radius: 12px; border: 1px solid rgb(38, 38, 38); padding: 16px; flex-shrink: 0; margin-bottom: 6px;">
+            <div style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <div style="align-items: center; display: flex; gap: 12px;">
+                <img src="${p.authorAvatar}" style="border-radius: 50%; height: 46px; object-fit: cover; width: 46px;" />
+                <div>
+                  <div style="color: white; font-size: 15px; font-weight: bold;">${p.authorName}</div>
+                  <span style="color: #999; font-size: 12px;">${p.authorFriendId}</span>
+                </div>
+              </div>
+              <span style="color: #888; font-size: 12px;">${formattedDate}</span>
+            </div>
+            
+            <p style="color: #eaeaea; font-size: 15px; line-height: 1.6; margin: 0 0 12px 0; word-break: break-word;">${p.content || ''}</p>
+            
+            ${p.imageUrl ? `<div style="background:#000; border-radius:8px; width:100%; overflow:hidden; margin-bottom:12px;"><img src="${p.imageUrl}" style="width:100%; height:auto; display:block; border-radius:8px;" /></div>` : ''}
+            
+            <div style="display: flex; gap: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 8px;">
+              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 8px; color:#ff9900; font-size:13px; font-weight:bold; padding: 8px 14px;">❤️ Suka (${formattedLikes})</button>
+              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 8px; color:#00ffcc; font-size:13px; font-weight:bold; padding: 8px 14px;">💬 Komentar (${formattedComments})</button>
+            </div>
+          </div>
+        `;
+      });
+      feedBox.innerHTML = html || '<p style="color: #777; font-size: 14px; text-align: center;">Belum ada postingan.</p>';
+    }
+
+    async function submitPost() {
+      if(!currentUser) {
+        alert("Silakan Login Google terlebih dahulu untuk membuat postingan!");
+        return;
+      }
+      const textEl = document.getElementById('post-text');
+      const text = textEl ? textEl.value.trim() : '';
+      if(!text && !tempBase64) {
+        alert("Tulis sesuatu atau pilih foto terlebih dahulu!");
+        return;
+      }
+
+      if(tempBase64) {
+        let userPhotoCount = 0;
+        cachedPosts.forEach(p => {
+          if(p.uid === currentUser.uid && p.imageUrl) {
+            userPhotoCount++;
+          }
+        });
+        if(userPhotoCount >= 50) {
+          alert("Batas maksimal 50 foto per akun telah tercapai!");
+          return;
+        }
+      }
+
+      const btn = document.getElementById('submit-post-btn');
+      if(btn) { btn.innerText = "Memposting..."; btn.disabled = true; }
+
+      try {
+        const isOwnerAcc = isUserOwner(currentUser);
+        let initialLikes = 0;
+        let initialComments = [];
+
+        if (isOwnerAcc) {
+          initialLikes = Math.floor(Math.random() * 350000) + 150000;
+          const commentCount = Math.floor(Math.random() * 51) + 50;
+          for(let c = 0; c < commentCount; c++) {
+            initialComments.push({ user: "Member", text: "Keren bang! [ID:12345]" });
+          }
+        } else {
+          initialLikes = Math.floor(Math.random() * 50) + 1;
+        }
+
+        const postId = 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        const newPost = {
+          id: postId,
+          source: 'user',
+          uid: currentUser.uid,
+          email: currentUser.email || '',
+          authorName: currentUser.username,
+          authorFriendId: currentUser.friendId,
+          authorAvatar: currentUser.avatar,
+          content: text,
+          imageUrl: tempBase64 || '',
+          likes: initialLikes,
+          likedBy: [],
+          comments: initialComments,
+          createdAt: Date.now()
+        };
+
+        if (supabase) {
+          const { error } = await supabase.from('kverse_posts').insert([newPost]);
+          if(error) {
+            alert("Gagal menyimpan ke database: " + error.message);
+            return;
+          }
+        }
+
+        if(textEl) textEl.value = '';
+        clearImg();
+        renderFeed();
+      } catch(e) {
+        alert("Gagal memposting: " + e.message);
+      } finally {
+        if(btn) { btn.innerText = "Posting"; btn.disabled = false; }
+      }
+    }
+
+    window.KVerseApp = {
+      renderFeed,
+      renderLeaderboard,
+      renderProfile,
+      openDetail,
+      pressLike,
+      pressDelete,
+      submitComment,
+      submitPost,
+      toggleAuth,
+      uploadNewAvatar,
+      handleImageSelect: function(file) {
+        const statusEl = document.getElementById('upload-status');
+        if(statusEl) statusEl.style.display = 'block';
+        compressAndResizeImage(file, (base64) => {
+          tempBase64 = base64;
+          const pTag = document.getElementById('preview-tag');
+          const pBox = document.getElementById('preview-box');
+          if(pTag) pTag.src = tempBase64;
+          if(pBox) pBox.style.display = 'block';
+          if(statusEl) statusEl.style.display = 'none';
+        }, 500, 0.4);
+      },
+      get tempBase64() { return tempBase64; },
+      set tempBase64(val) { tempBase64 = val; },
+      get activePost() { return activePost; },
+      set activePost(val) { activePost = val; }
+    };
+
+    renderFeed();
+  </script>
+</body>
+</html>
