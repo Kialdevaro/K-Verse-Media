@@ -132,7 +132,7 @@
       <button id="close-modal-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 12px; font-weight: bold; height: 28px; position: absolute; right: 10px; top: 10px; width: 28px;">X</button>
       
       <div id="modal-img-box" style="background: rgb(0, 0, 0); border-radius: 6px; display: none; margin-bottom: 10px; overflow: hidden; text-align: center; width: 100%;">
-        <img id="modal-img-tag" src="" style="max-height: 220px; max-width: 100%; object-fit: contain;" />
+        <img id="modal-img-tag" style="max-height: 220px; max-width: 100%; object-fit: contain;" />
       </div>
 
       <p id="modal-text-tag" style="color: white; font-size: 13px; line-height: 1.5; margin: 0px 0px 10px; word-break: break-word;"></p>
@@ -152,7 +152,7 @@
     </div>
   </div>
 
-  <!--SKRIP LOGIKA & INTERAKSI-->
+  <!--SKRIP LOGIKA & INTERAKSI UI-->
   <script>
     window.KVerseUI = {
       switchTab: function(tab) {
@@ -271,7 +271,7 @@
     });
   </script>
 
-  <!--SKRIP DATABASE SUPABASE & FIREBASE CLOUD-->
+  <!--SKRIP UTAMA DATABASE & KONTrol APLIKASI (K-Verse App)-->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -284,6 +284,19 @@
     let supabase = null;
     let auth = null;
     let provider = null;
+
+    const OWNER_EMAIL = "akunwildrift2020@gmail.com";
+    const OWNER_FRIEND_ID = "KV-683419";
+
+    const commentPool = [
+      "Keren banget dokumentasinya bro!",
+      "Mantap jiwa nih, ditunggu update selanjutnya!",
+      "Gokil abis, sukses terus buat K-Verse!",
+      "Inspiratif banget pembahasannya ✨",
+      "Top markotop! Keren abis dokumentasinya 👍",
+      "Mantap pol, menginspirasi sekali!",
+      "Keren parah dokumentasinya bro 🔥"
+    ];
 
     function formatNum(num) {
       return new Intl.NumberFormat('id-ID').format(num || 0);
@@ -306,6 +319,40 @@
       }
     }
 
+    function isUserOwner(user) {
+      if (!user) return false;
+      const emailMatch = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
+      const idMatch = user.friendId && user.friendId.trim() === OWNER_FRIEND_ID;
+      return emailMatch || idMatch;
+    }
+
+    // Kompresi Gambar
+    function compressAndResizeImage(file, callback, maxWidth = 350, quality = 0.4) {
+      const reader = new FileReader();
+      reader.onerror = function() { alert("Gagal membaca file gambar."); };
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onerror = function() { alert("Format gambar tidak didukung."); };
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          callback(dataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
     try {
       const firebaseConfig = {
         apiKey: "AIzaSyCo8ggig1Gk2ioaTa3lb_QtHIawfb4DNt8",
@@ -326,689 +373,442 @@
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       onAuthStateChanged(auth, async (user) => {
-        if(user) await initUser(user);
-        else { currentUser = null; renderProfile(); }
-      });
-    } catch(e) {}
-
-    const OWNER_EMAIL = "akunwildrift2020@gmail.com";
-    const OWNER_FRIEND_ID = "KV-683419";
-
-    const commentPool = [
-      "Keren banget dokumentasinya bro! [ID:",
-      "Mantap jiwa nih, ditunggu update selanjutnya! [ID:",
-      "Gokil abis, sukses terus buat K-Verse! [ID:",
-      "Inspiratif banget pembahasannya ✨ [ID:",
-      "Top markotop! Keren abis dokumentasinya 👍 [ID:",
-      "Mantap pol, menginspirasi sekali! [ID:",
-      "Keren parah dokumentasinya bro 🔥 [ID:"
-    ];
-
-    function getRandomizedComments(count = 50) {
-      const arr = [];
-      for(let c = 0; c < count; c++) {
-        const randTemplate = commentPool[Math.floor(Math.random() * commentPool.length)];
-        const randId = Math.floor(1000 + Math.random() * 9000);
-        arr.push({ user: "Member", text: `${randTemplate}${randId}]` });
-      }
-      return arr;
-    }
-
-    function isUserOwner(user) {
-      if (!user) return false;
-      const emailMatch = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
-      const idMatch = user.friendId && user.friendId.trim() === OWNER_FRIEND_ID;
-      return emailMatch || idMatch;
-    }
-
-    async function checkOrganicXp() {
-      if (!currentUser || isUserOwner(currentUser) || !supabase) return;
-      const storageKey = 'kverse_last_organic_xp_' + currentUser.uid;
-      const lastTime = parseInt(localStorage.getItem(storageKey) || '0', 10);
-      const now = Date.now();
-      const interval = 30 * 60 * 1000;
-
-      if (now - lastTime >= interval) {
-        const earned = Math.floor(Math.random() * 21) + 30;
-        currentUser.xp = (currentUser.xp || 0) + earned;
-        localStorage.setItem(storageKey, now);
-
-        try {
-          await supabase.from('kverse_users').update({ xp: currentUser.xp }).eq('uid', currentUser.uid);
+        if(user) {
+          await initUser(user);
+        } else {
+          currentUser = null;
           renderProfile();
-        } catch (e) {}
-      }
-    }
-
-    function compressAndResizeImage(file, callback, maxWidth = 350, quality = 0.4) {
-      const reader = new FileReader();
-      reader.onerror = function() { alert("Gagal membaca file gambar."); };
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onerror = function() { alert("Format gambar tidak didukung."); };
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
-          } else {
-            if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          callback(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    async function toggleAuth() {
-      if(!auth || !provider) {
-        alert("Autentikasi belum siap.");
-        return;
-      }
-
-      // Deteksi jika dibuka di dalam iframe blog, arahkan otomatis ke tab baru agar login Google sukses
-      if (window.self !== window.top) {
-        if(confirm("Demi keamanan browser & Google, login harus dilakukan di halaman utama K-Verse.\n\nBuka halaman login sekarang?")) {
-          window.open("https://kialdevaro.github.io/K-Verse-Media/", "_blank");
         }
-        return;
-      }
-
-      if(!currentUser) {
-        try {
-          const res = await signInWithPopup(auth, provider);
-          await initUser(res.user);
-        } catch(e) {
-          alert("Login gagal: " + e.message);
-        }
-      } else {
-        try { await signOut(auth); } catch(e) {}
-        currentUser = null;
-        renderProfile();
-      }
+      });
+    } catch(e) {
+      console.error("Init Error:", e);
     }
 
-    async function initUser(user) {
+    async function initUser(firebaseUser) {
       if (!supabase) return;
       try {
-        const isOwnerEmail = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
-        const assignedFriendId = isOwnerEmail ? OWNER_FRIEND_ID : ('KV-' + Math.floor(100000 + Math.random() * 899999));
-
-        const { data: existing } = await supabase
+        const { data, error } = await supabase
           .from('kverse_users')
           .select('*')
-          .eq('uid', user.uid)
+          .eq('uid', firebaseUser.uid)
           .single();
 
-        if(existing) {
-          currentUser = existing;
-          if(isOwnerEmail && currentUser.friendId !== OWNER_FRIEND_ID) {
-            currentUser.friendId = OWNER_FRIEND_ID;
-            await supabase.from('kverse_users').update({ friendId: OWNER_FRIEND_ID }).eq('uid', user.uid);
-          }
+        if (data) {
+          currentUser = data;
         } else {
-          currentUser = {
-            uid: user.uid,
-            email: user.email,
-            friendId: assignedFriendId,
-            username: user.displayName || 'Kialdevaro Member',
-            avatar: user.photoURL || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
-            xp: 0,
-            last_active: Date.now()
+          const randomId = 'KV-' + Math.floor(100000 + Math.random() * 900000);
+          const newUser = {
+            uid: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Anggota K-Verse',
+            email: firebaseUser.email || '',
+            avatar: firebaseUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
+            friendId: randomId,
+            xp: 100
           };
-          await supabase.from('kverse_users').upsert([currentUser]);
+          await supabase.from('kverse_users').insert([newUser]);
+          currentUser = newUser;
         }
-
-        await checkOrganicXp();
         renderProfile();
-      } catch(e) {}
-    }
-
-    function uploadNewAvatar(e) {
-      if(!currentUser) {
-        alert("Silakan Login Google terlebih dahulu untuk mengganti foto profil.");
-        return;
-      }
-      const file = e.target.files[0];
-      if(file) {
-        const statusEl = document.getElementById('avatar-upload-status');
-        if(statusEl) statusEl.style.display = 'block';
-        compressAndResizeImage(file, async (base64) => {
-          currentUser.avatar = base64;
-          const avTag = document.getElementById('my-avatar');
-          if(avTag) avTag.src = base64;
-          try {
-            if (supabase) {
-              await supabase.from('kverse_users').update({ avatar: base64 }).eq('uid', currentUser.uid);
-            }
-            if(statusEl) statusEl.style.display = 'none';
-            renderFeed();
-          } catch(err) {
-            if(statusEl) statusEl.style.display = 'none';
-          }
-        }, 250, 0.4);
+        renderFeed();
+      } catch(err) {
+        console.error("User Sync Error:", err);
       }
     }
 
-    async function getCloudBots() {
-      if (!supabase) return [];
-      try {
-        const { data: bots, error } = await supabase
-          .from('kverse_bots')
-          .select('*')
-          .order('createdAt', { ascending: false })
-          .limit(30);
-
-        if (error) throw error;
-        return bots || [];
-      } catch(e) {
-        return [];
-      }
-    }
-
-    async function renderLeaderboard() {
-      const rankBox = document.getElementById('rank-box');
-      if(!rankBox) return;
-      rankBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center;">Memuat papan skor...</p>';
-      
-      let allUsers = [];
-      try {
-        const bots = await getCloudBots();
-        if(Array.isArray(bots)) allUsers.push(...bots);
-      } catch(e) {}
-
-      try {
-        if (supabase) {
-          const { data: users } = await supabase
-            .from('kverse_users')
-            .select('*')
-            .limit(50);
-
-          if(users) {
-            users.forEach(u => {
-              allUsers.push({
-                id: u.uid,
-                source: 'supabase',
-                authorName: u.username || u.authorname || 'Member',
-                authorFriendId: u.friendId || u.friendid || 'KV-000000',
-                authorAvatar: u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
-                xp: u.xp || 0,
-                email: u.email
-              });
-            });
-          }
-        }
-      } catch(err) {}
-
-      allUsers.sort((a, b) => b.xp - a.xp);
-
-      let html = '';
-      allUsers.slice(0, 30).forEach((u, idx) => {
-        const isMe = currentUser && (u.id === currentUser.uid || u.email === currentUser.email);
-        const isOwnerAcc = isUserOwner(u);
-        const displayName = isOwnerAcc ? `${u.authorName}` : (isMe ? `${u.authorName} (Anda)` : u.authorName);
-        const borderStyle = isMe ? 'border: 1px solid #00ffcc;' : 'border: 1px solid #262626;';
-
-        html += `
-          <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; ${borderStyle} display: flex; justify-content: space-between; padding: 10px 12px; width: 100%;">
-            <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
-              <span style="color: ${idx===0?'#ffd700':idx===1?'#c0c0c0':idx===2?'#cd7f32':'#777'}; font-size: 13px; font-weight: bold; width: 22px; flex-shrink: 0;">#${idx+1}</span>
-              <img src="${u.authorAvatar}" style="border-radius: 50%; height: 36px; object-fit: cover; width: 36px; flex-shrink: 0;" />
-              <div style="min-width: 0; flex: 1;">
-                <div style="color: ${isMe?'#00ffcc':'white'}; font-size: 13px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</div>
-                <span style="color: #888; font-size: 11px;">${u.authorFriendId}</span>
-              </div>
-            </div>
-            <span style="color: #ff9900; font-size: 13px; font-weight: bold; flex-shrink: 0; margin-left: 8px;">${formatNum(u.xp)} XP</span>
-          </div>
-        `;
-      });
-      rankBox.innerHTML = html || '<p style="color: #777; font-size: 13px; text-align: center;">Belum ada data.</p>';
-    }
-
-    async function renderProfile() {
+    // Fungsi Render Tampilan Profil
+    function renderProfile() {
       const nameEl = document.getElementById('my-name');
-      if(!nameEl) return;
+      const idEl = document.getElementById('my-id');
+      const xpEl = document.getElementById('my-xp');
+      const avatarEl = document.getElementById('my-avatar');
+      const authBtn = document.getElementById('auth-btn');
 
-      if(!currentUser) {
-        nameEl.innerText = "Tamu (Belum Login)";
-        document.getElementById('my-id').innerText = "ID: #KV-000000";
-        document.getElementById('my-xp').innerText = "Total XP: 0";
-        document.getElementById('my-avatar').src = "https://cdn-icons-png.flaticon.com/512/147/147144.png";
-        document.getElementById('auth-btn').innerText = "Login";
-        document.getElementById('my-gallery').innerHTML = '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Login untuk melihat galeri.</p>';
-        return;
-      }
-
-      nameEl.innerText = currentUser.username;
-      document.getElementById('my-id').innerText = `ID: ${currentUser.friendId}`;
-      document.getElementById('my-xp').innerText = `Total XP: ${formatNum(currentUser.xp)}`;
-      document.getElementById('my-avatar').src = currentUser.avatar;
-      document.getElementById('auth-btn').innerText = "Keluar";
-
-      const gallery = document.getElementById('my-gallery');
-      gallery.innerHTML = '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Memuat galeri...</p>';
-      try {
-        if (supabase) {
-          const { data: posts } = await supabase
-            .from('kverse_posts')
-            .select('*')
-            .eq('uid', currentUser.uid)
-            .limit(50);
-
-          let myPostsHtml = '';
-          if(posts) {
-            posts.forEach(p => {
-              const imgUrl = p.imageUrl || p.imageurl;
-              if(imgUrl) {
-                myPostsHtml += `<div style="background:#000; border-radius:6px; aspect-ratio: 1; overflow:hidden;"><img src="${imgUrl}" style="height:100%; object-fit:cover; width:100%; display:block;" /></div>`;
-              }
-            });
-          }
-          gallery.innerHTML = myPostsHtml || '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Belum ada postingan foto (Maks. 50).</p>';
-        }
-      } catch(e) {
-        gallery.innerHTML = '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Gagal memuat galeri.</p>';
-      }
-    }
-
-    function openDetail(id) {
-      const p = cachedPosts.find(x => String(x.id) === String(id));
-      if(!p) return;
-      activePost = p;
-
-      const imgBox = document.getElementById('modal-img-box');
-      const imgTag = document.getElementById('modal-img-tag');
-      if(p.imageUrl) {
-        imgTag.src = p.imageUrl;
-        if(imgBox) imgBox.style.display = 'block';
+      if (currentUser) {
+        if(nameEl) nameEl.textContent = currentUser.name;
+        if(idEl) idEl.textContent = 'ID: #' + (currentUser.friendId || 'KV-000000');
+        if(xpEl) xpEl.textContent = 'Total XP: ' + formatNum(currentUser.xp || 0);
+        if(avatarEl && currentUser.avatar) avatarEl.src = currentUser.avatar;
+        if(authBtn) authBtn.textContent = 'Keluar';
       } else {
-        if(imgBox) imgBox.style.display = 'none';
+        if(nameEl) nameEl.textContent = 'Tamu (Belum Login)';
+        if(idEl) idEl.textContent = 'ID: #KV-000000';
+        if(xpEl) xpEl.textContent = 'Total XP: 0';
+        if(avatarEl) avatarEl.src = 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
+        if(authBtn) authBtn.textContent = 'Login';
       }
-
-      const textTag = document.getElementById('modal-text-tag');
-      if(textTag) textTag.innerText = p.content || '';
-      
-      const hasLiked = currentUser && activePost.likedBy && activePost.likedBy.includes(currentUser.uid);
-      const likeBtn = document.getElementById('modal-like-btn');
-      if(likeBtn) {
-        likeBtn.innerHTML = `❤️ Suka (${formatNum(activePost.likes || 0)})`;
-        likeBtn.style.color = hasLiked ? '#ff5500' : '#ff9900';
-        likeBtn.style.borderColor = hasLiked ? '#ff5500' : 'rgba(255,153,0,0.4)';
-      }
-
-      const delBtn = document.getElementById('modal-del-btn');
-      if(delBtn) {
-        if(currentUser && activePost.uid === currentUser.uid) {
-          delBtn.style.display = 'block';
-        } else {
-          delBtn.style.display = 'none';
-        }
-      }
-
-      renderModalComments();
-      const modal = document.getElementById('detail-modal');
-      if(modal) modal.style.display = 'flex';
+      renderMyGallery();
     }
 
-    async function pressLike() {
-      if(!activePost) return;
-      if(!currentUser) {
-        alert("Silakan Login Google terlebih dahulu untuk menyukai postingan!");
-        return;
-      }
-      if(!activePost.likedBy) activePost.likedBy = [];
-
-      const index = activePost.likedBy.indexOf(currentUser.uid);
-      const likeBtn = document.getElementById('modal-like-btn');
-
-      if(index > -1) {
-        activePost.likedBy.splice(index, 1);
-        activePost.likes = Math.max(0, (activePost.likes || 1) - 1);
-      } else {
-        activePost.likedBy.push(currentUser.uid);
-        activePost.likes = (activePost.likes || 0) + 1;
-      }
-
-      const hasLiked = activePost.likedBy.includes(currentUser.uid);
-      if(likeBtn) {
-        likeBtn.innerHTML = `❤️ Suka (${formatNum(activePost.likes || 0)})`;
-        likeBtn.style.color = hasLiked ? '#ff5500' : '#ff9900';
-        likeBtn.style.borderColor = hasLiked ? '#ff5500' : 'rgba(255,153,0,0.4)';
-      }
-
-      if (supabase) {
-        if(activePost.source === 'user') {
-          try {
-            await supabase.from('kverse_posts').update({ 
-              likes: activePost.likes, 
-              likedBy: activePost.likedBy 
-            }).eq('id', activePost.id);
-          } catch(e) {}
-        } else {
-          try {
-            await supabase.from('kverse_bots').update({ 
-              likes: activePost.likes, 
-              likedBy: activePost.likedBy 
-            }).eq('id', activePost.id);
-          } catch(e) {}
-        }
-      }
-      renderFeed();
-    }
-
-    async function pressDelete() {
-      if(!activePost || !currentUser || !supabase) return;
-      if(activePost.uid !== currentUser.uid) {
-        alert("Tidak memiliki izin.");
-        return;
-      }
-      if(!confirm("Yakin ingin menghapus postingan ini?")) return;
-
-      if(activePost.source === 'user') {
-        try {
-          await supabase.from('kverse_posts').delete().eq('id', activePost.id);
-        } catch(e) {
-          alert("Gagal menghapus.");
-          return;
-        }
-      }
-      closeModal();
-      renderFeed();
-    }
-
-    function renderModalComments() {
-      const box = document.getElementById('modal-comments-box');
-      if(!box) return;
-      box.innerHTML = '';
-      
-      const commentsList = safeParseArray(activePost ? activePost.comments : []);
-      if(commentsList.length === 0) {
-        box.innerHTML = '<span style="color:#777; text-align:center; padding:6px;">Belum ada komentar.</span>';
-        return;
-      }
-
-      let html = '';
-      commentsList.forEach(c => {
-        html += `<div><strong style="color:#00ffcc;">${c.user || 'Member'}:</strong> <span style="color:#ccc;">${c.text || ''}</span></div>`;
-      });
-      box.innerHTML = html;
-    }
-
-    async function submitComment() {
-      if(!activePost) return;
-      if(!currentUser) {
-        alert("Silakan Login Google terlebih dahulu untuk menulis komentar!");
-        return;
-      }
-      const input = document.getElementById('modal-comment-input');
-      const val = input ? input.value.trim() : '';
-      if(!val) return;
-
-      if(!activePost.comments) activePost.comments = [];
-      activePost.comments = safeParseArray(activePost.comments);
-      activePost.comments.push({ user: currentUser.username, text: val });
-      if(input) input.value = '';
-
-      renderModalComments();
-
-      if (supabase) {
-        if(activePost.source === 'user') {
-          try {
-            await supabase.from('kverse_posts').update({ comments: activePost.comments }).eq('id', activePost.id);
-          } catch(e) {}
-        } else {
-          try {
-            await supabase.from('kverse_bots').update({ comments: activePost.comments }).eq('id', activePost.id);
-          } catch(e) {}
-        }
-      }
-      renderFeed();
-    }
-
+    // Render Feed / Beranda
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
-      if(!feedBox) return;
-      feedBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center;">Memuat linimasa...</p>';
-      
-      let posts = [];
-      try {
-        const bots = await getCloudBots();
-        if(Array.isArray(bots)) {
-          bots.forEach(b => {
-            let parsedComms = safeParseArray(b.comments);
-            if(parsedComms.length === 0 || parsedComms.every(c => c.text.includes("9921") || c.text.includes("12345"))) {
-              b.comments = getRandomizedComments(Math.floor(Math.random() * 25) + 35);
-            } else {
-              b.comments = parsedComms;
-            }
-          });
-          posts.push(...bots);
-        }
-      } catch(e) {}
+      if (!feedBox || !supabase) return;
 
       try {
-        if (supabase) {
-          const { data: userPosts } = await supabase
-            .from('kverse_posts')
-            .select('*');
+        const { data, error } = await supabase
+          .from('kverse_posts')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-          if(userPosts) {
-            for(let up of userPosts) {
-              if(up.source === 'user' && up.likes < 1000) {
-                const randomGrowth = Math.floor(Math.random() * 3) + 1;
-                up.likes = (up.likes || 0) + randomGrowth;
-                supabase.from('kverse_posts').update({ likes: up.likes }).eq('id', up.id).then(()=>{});
-              }
-              let parsedComms = safeParseArray(up.comments);
-              if(parsedComms.length > 0 && parsedComms.every(c => c.text.includes("9921") || c.text.includes("12345"))) {
-                up.comments = getRandomizedComments(parsedComms.length);
-              }
-            }
-            posts.push(...userPosts);
-          }
+        if (error) throw error;
+        cachedPosts = data || [];
+
+        if (cachedPosts.length === 0) {
+          feedBox.innerHTML = '<p style="color: #777777; font-size: 13px; padding: 20px; text-align: center;">Belum ada postingan di linimasa.</p>';
+          return;
         }
-      } catch(e) {}
 
-      posts = posts.map(p => ({
-        id: p.id,
-        source: p.source || 'user',
-        uid: p.uid,
-        email: p.email,
-        authorName: p.authorName || p.authorname || 'Member',
-        authorFriendId: p.authorFriendId || p.authorfriendid || 'KV-000000',
-        authorAvatar: p.authorAvatar || p.authoravatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
-        content: p.content,
-        imageUrl: p.imageUrl || p.imageurl || '',
-        likes: p.likes || 0,
-        likedBy: safeParseArray(p.likedBy || p.likedby),
-        comments: safeParseArray(p.comments),
-        createdAt: p.createdAt || p.createdat || Date.now()
-      }));
+        let html = '';
+        cachedPosts.forEach(post => {
+          const likes = safeParseArray(post.likes);
+          const comments = safeParseArray(post.comments);
+          const hasImage = post.image && post.image.trim() !== '';
 
-      posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      cachedPosts = posts;
-
-      let html = '';
-      posts.forEach((p, idx) => {
-        const formattedDate = formatDate(p.createdAt);
-        const formattedLikes = formatNum(p.likes);
-        const commentsArr = safeParseArray(p.comments);
-        const formattedComments = formatNum(commentsArr.length);
-
-        html += `
-          <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
-            <div style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%;">
-              <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
-                <img src="${p.authorAvatar}" style="border-radius: 50%; height: 40px; object-fit: cover; width: 40px; flex-shrink: 0;" />
-                <div style="min-width: 0; flex: 1;">
-                  <div style="color: white; font-size: 14px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.authorName}</div>
-                  <span style="color: #999; font-size: 11px;">${p.authorFriendId}</span>
-                </div>
-              </div>
-              <span style="color: #888; font-size: 11px; flex-shrink: 0; margin-left: 6px;">${formattedDate}</span>
-            </div>
-            
-            <p style="color: #eaeaea; font-size: 14px; line-height: 1.5; margin: 0 0 10px 0; word-break: break-word;">${p.content || ''}</p>
-            
-            ${p.imageUrl ? `<div style="background:#000; border-radius:6px; width:100%; overflow:hidden; margin-bottom:10px;"><img src="${p.imageUrl}" style="width:100%; height:auto; display:block; border-radius:6px;" /></div>` : ''}
-            
-            <div style="display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 6px;">
-              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 6px; color:#ff9900; font-size:12px; font-weight:bold; padding: 6px 12px;">❤️ Suka (${formattedLikes})</button>
-              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 6px; color:#00ffcc; font-size:12px; font-weight:bold; padding: 6px 12px;">💬 Komentar (${formattedComments})</button>
-            </div>
-          </div>
-        `;
-
-        if ((idx + 1) % 15 === 0) {
           html += `
-            <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgba(255,153,0,0.4); padding: 12px; width: 100%;">
-              <div style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%;">
-                <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
-                  <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" style="border-radius: 50%; height: 40px; object-fit: cover; width: 40px; flex-shrink: 0;" />
-                  <div style="min-width: 0; flex: 1;">
-                    <div style="color: #ff9900; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
-                      Kialdevaro ADS <span style="background: rgba(255,153,0,0.2); color: #ff9900; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">SPONSORED</span>
-                    </div>
-                    <span style="color: #888; font-size: 11px;">Disponsori Resmi • K-Verse Network</span>
-                  </div>
+            <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
+              <div style="align-items: center; display: flex; gap: 8px; margin-bottom: 8px;">
+                <img src="${post.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
+                <div>
+                  <div style="color: #ffc107; font-size: 12px; font-weight: bold;">${post.author_name}</div>
+                  <div style="color: #777777; font-size: 10px;">${formatDate(post.created_at)}</div>
                 </div>
-                <span style="color: #666; font-size: 12px;">Ad</span>
               </div>
-              
-              <p style="color: #eaeaea; font-size: 14px; line-height: 1.5; margin: 0 0 10px 0; word-break: break-word;">
-                🔥 Jelajahi keseruan tanpa batas di K-Verse Game Hub! Mainkan berbagai game pilihan terbaik langsung dari perangkat Anda tanpa perlu instal aplikasi tambahan.
-              </p>
-              
-              <div style="background: linear-gradient(135deg, #161616, #222); border-radius: 6px; width: 100%; overflow: hidden; margin-bottom: 10px; border: 1px solid #333; text-align: center; padding: 20px;">
-                <span style="font-size: 28px;">🎮</span>
-                <div style="color: #00ffcc; font-size: 15px; font-weight: bold; margin-top: 6px;">Kialdevaro Game Hub ID</div>
-                <div style="color: #aaa; font-size: 11px; margin-top: 2px;">kialdevarogamesid.blogspot.com</div>
-              </div>
-              
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 6px;">
-                <span style="color: #888; font-size: 11px;">Platform Game &amp; Komunitas</span>
-                <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_top" style="background: rgb(255, 153, 0); color: black; font-size: 12px; font-weight: bold; padding: 7px 16px; border-radius: 6px; text-decoration: none;">Mainkan Sekarang &gt;</a>
+              <p style="color: white; font-size: 13px; line-height: 1.4; margin: 0px 0px ${hasImage ? '8px' : '10px'}; word-break: break-word;">${post.text || ''}</p>
+              ${hasImage ? `
+                <div style="background: black; border-radius: 6px; margin-bottom: 10px; overflow: hidden; text-align: center;">
+                  <img src="${post.image}" style="max-height: 250px; max-width: 100%; object-fit: contain;" />
+                </div>
+              ` : ''}
+              <div style="display: flex; gap: 8px;">
+                <button class="action-btn open-post-btn" data-id="${post.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 6px; color: #ff9900; font-size: 11px; font-weight: bold; padding: 5px 10px;">❤️ Suka (${likes.length})</button>
+                <button class="action-btn open-post-btn" data-id="${post.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 6px; color: #00ffcc; font-size: 11px; font-weight: bold; padding: 5px 10px;">💬 Komentar (${comments.length})</button>
               </div>
             </div>
           `;
-        }
-      });
-      feedBox.innerHTML = html || '<p style="color: #777; font-size: 13px; text-align: center;">Belum ada postingan.</p>';
+        });
+        feedBox.innerHTML = html;
+      } catch(err) {
+        console.error("Render Feed Error:", err);
+      }
     }
 
-    async function submitPost() {
-      if(!currentUser) {
-        alert("Silakan Login Google terlebih dahulu untuk membuat postingan!");
-        return;
-      }
-      const textEl = document.getElementById('post-text');
-      const text = textEl ? textEl.value.trim() : '';
-      if(!text && !tempBase64) {
-        alert("Tulis sesuatu atau pilih foto terlebih dahulu!");
-        return;
-      }
-
-      if(tempBase64) {
-        let userPhotoCount = 0;
-        cachedPosts.forEach(p => {
-          if(p.uid === currentUser.uid && p.imageUrl) {
-            userPhotoCount++;
-          }
-        });
-        if(userPhotoCount >= 50) {
-          alert("Batas maksimal 50 foto per akun telah tercapai!");
-          return;
-        }
-      }
-
-      const btn = document.getElementById('submit-post-btn');
-      if(btn) { btn.innerText = "Memposting..."; btn.disabled = true; }
+    // Render Papan Skor (Leaderboard)
+    async function renderLeaderboard() {
+      const rankBox = document.getElementById('rank-box');
+      if (!rankBox || !supabase) return;
 
       try {
-        const isOwnerAcc = isUserOwner(currentUser);
-        let initialLikes = 0;
-        let initialComments = [];
-
-        if (isOwnerAcc) {
-          initialLikes = Math.floor(Math.random() * 350000) + 150000;
-          const commentCount = Math.floor(Math.random() * 21) + 40;
-          initialComments = getRandomizedComments(commentCount);
-        } else {
-          initialLikes = Math.floor(Math.random() * 50) + 1;
+        const { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
+        if (!data || data.length === 0) {
+          rankBox.innerHTML = '<p style="color: #777777; font-size: 13px; text-align: center;">Belum ada data skor.</p>';
+          return;
         }
 
-        const postId = 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        const newPost = {
-          id: postId,
-          source: 'user',
-          uid: currentUser.uid,
-          email: currentUser.email || '',
-          authorName: currentUser.username,
-          authorFriendId: currentUser.friendId,
-          authorAvatar: currentUser.avatar,
-          content: text,
-          imageUrl: tempBase64 || '',
-          likes: initialLikes,
-          likedBy: [],
-          comments: initialComments,
-          createdAt: Date.now()
-        };
+        let html = '';
+        data.forEach((u, idx) => {
+          let badgeColor = '#888';
+          if(idx === 0) badgeColor = '#ffD700';
+          else if(idx === 1) badgeColor = '#C0C0C0';
+          else if(idx === 2) badgeColor = '#CD7F32';
 
-        if (supabase) {
-          const { error } = await supabase.from('kverse_posts').insert([newPost]);
-          if(error) {
-            alert("Gagal menyimpan ke database: " + error.message);
-            return;
-          }
-        }
-
-        if(textEl) textEl.value = '';
-        clearImg();
-        renderFeed();
-      } catch(e) {
-        alert("Gagal memposting: " + e.message);
-      } finally {
-        if(btn) { btn.innerText = "Posting"; btn.disabled = false; }
-      }
+          html += `
+            <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; padding: 8px 12px; width: 100%;">
+              <div style="align-items: center; display: flex; gap: 10px;">
+                <span style="color: ${badgeColor}; font-size: 13px; font-weight: bold; width: 20px; text-align: center;">#${idx+1}</span>
+                <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
+                <div>
+                  <div style="color: white; font-size: 12px; font-weight: bold;">${u.name}</div>
+                  <div style="color: #00ffcc; font-size: 10px;">ID: #${u.friendId || 'KV-000000'}</div>
+                </div>
+              </div>
+              <span style="color: #ff9900; font-size: 12px; font-weight: bold;">${formatNum(u.xp)} XP</span>
+            </div>
+          `;
+        });
+        rankBox.innerHTML = html;
+      } catch(e) {}
     }
 
-    window.KVerseApp = {
-      renderFeed,
-      renderLeaderboard,
-      renderProfile,
-      openDetail,
-      pressLike,
-      pressDelete,
-      submitComment,
-      submitPost,
-      toggleAuth,
-      uploadNewAvatar,
-      handleImageSelect: function(file) {
-        const statusEl = document.getElementById('upload-status');
-        if(statusEl) statusEl.style.display = 'block';
-        compressAndResizeImage(file, (base64) => {
-          tempBase64 = base64;
-          const pTag = document.getElementById('preview-tag');
-          const pBox = document.getElementById('preview-box');
-          if(pTag) pTag.src = tempBase64;
-          if(pBox) pBox.style.display = 'block';
-          if(statusEl) statusEl.style.display = 'none';
-        }, 500, 0.4);
-      },
-      get tempBase64() { return tempBase64; },
-      set tempBase64(val) { tempBase64 = val; },
-      get activePost() { return activePost; },
-      set activePost(val) { activePost = val; }
-    };
+    // Render Galeri Profil Pengguna
+    async function renderMyGallery() {
+      const galleryBox = document.getElementById('my-gallery');
+      if (!galleryBox || !supabase || !currentUser) {
+        if(galleryBox) galleryBox.innerHTML = '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Login untuk melihat galeri.</span>';
+        return;
+      }
 
-    renderFeed();
+      try {
+        const { data } = await supabase.from('kverse_posts').select('*').eq('author_uid', currentUser.uid).order('created_at', { ascending: false });
+        if (!data || data.length === 0) {
+          galleryBox.innerHTML = '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada postingan foto.</span>';
+          return;
+        }
+
+        let html = '';
+        data.forEach(p => {
+          if (p.image) {
+            html += `
+              <div class="action-btn open-post-btn" data-id="${p.id}" style="aspect-ratio: 1; background: black; border-radius: 6px; overflow: hidden;">
+                <img src="${p.image}" style="height: 100%; object-fit: cover; width: 100%;" />
+              </div>
+            `;
+          }
+        });
+        galleryBox.innerHTML = html || '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada postingan foto.</span>';
+      } catch(e) {}
+    }
+
+    // Objek Utama KVerseApp untuk Interaksi & Tombol Togel
+    window.KVerseApp = {
+      tempBase64: null,
+      activePost: null,
+
+      handleImageSelect: function(file) {
+        const uploadStatus = document.getElementById('upload-status');
+        if(uploadStatus) uploadStatus.style.display = 'block';
+        compressAndResizeImage(file, (base64) => {
+          window.KVerseApp.tempBase64 = base64;
+          const pBox = document.getElementById('preview-box');
+          const pTag = document.getElementById('preview-tag');
+          if(pBox) pBox.style.display = 'block';
+          if(pTag) pTag.src = base64;
+          if(uploadStatus) uploadStatus.style.display = 'none';
+        });
+      },
+
+      submitPost: async function() {
+        if (!currentUser) {
+          alert("Silakan Login terlebih dahulu di Tab Profil!");
+          window.KVerseUI.switchTab('profile');
+          return;
+        }
+        const textEl = document.getElementById('post-text');
+        const text = textEl ? textEl.value.trim() : '';
+        const image = window.KVerseApp.tempBase64 || '';
+
+        if (!text && !image) {
+          alert("Tulis sesuatu atau sertakan foto sebelum memposting.");
+          return;
+        }
+
+        try {
+          const newPost = {
+            author_uid: currentUser.uid,
+            author_name: currentUser.name,
+            author_avatar: currentUser.avatar,
+            text: text,
+            image: image,
+            likes: JSON.stringify([]),
+            comments: JSON.stringify([])
+          };
+
+          const { error } = await supabase.from('kverse_posts').insert([newPost]);
+          if(error) throw error;
+
+          if(textEl) textEl.value = '';
+          window.KVerseUI.clearImg();
+          renderFeed();
+          alert("Berhasil memposting!");
+        } catch(err) {
+          alert("Gagal memposting: " + err.message);
+        }
+      },
+
+      openDetail: async function(postId) {
+        const found = cachedPosts.find(p => p.id == postId);
+        if (!found) return;
+        window.KVerseApp.activePost = found;
+
+        const modal = document.getElementById('detail-modal');
+        const imgBox = document.getElementById('modal-img-box');
+        const imgTag = document.getElementById('modal-img-tag');
+        const textTag = document.getElementById('modal-text-tag');
+        const likeBtn = document.getElementById('modal-like-btn');
+        const delBtn = document.getElementById('modal-del-btn');
+        const commentsBox = document.getElementById('modal-comments-box');
+
+        if(textTag) textTag.textContent = found.text || '';
+        if(found.image) {
+          if(imgBox) imgBox.style.display = 'block';
+          if(imgTag) imgTag.src = found.image;
+        } else {
+          if(imgBox) imgBox.style.display = 'none';
+        }
+
+        const likes = safeParseArray(found.likes);
+        const hasLiked = currentUser ? likes.includes(currentUser.uid) : false;
+        if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
+
+        // Tampilkan tombol hapus jika pemilik post
+        if(currentUser && (currentUser.uid === found.author_uid || isUserOwner(currentUser))) {
+          if(delBtn) delBtn.style.display = 'block';
+        } else {
+          if(delBtn) delBtn.style.display = 'none';
+        }
+
+        // Render Komentar
+        const comments = safeParseArray(found.comments);
+        let cHtml = '';
+        if(comments.length === 0) {
+          cHtml = '<span style="color: #777; text-align: center; padding: 4px;">Belum ada komentar.</span>';
+        } else {
+          comments.forEach(c => {
+            cHtml += `<div style="border-bottom: 1px solid rgb(30,30,30); padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> <span style="color: #fff;">${c.text}</span></div>`;
+          });
+        }
+        if(commentsBox) commentsBox.innerHTML = cHtml;
+
+        if(modal) modal.style.display = 'flex';
+      },
+
+      pressLike: async function() {
+        if (!currentUser) {
+          alert("Silakan Login terlebih dahulu untuk menyukai postingan!");
+          return;
+        }
+        if (!window.KVerseApp.activePost) return;
+
+        const post = window.KVerseApp.activePost;
+        let likes = safeParseArray(post.likes);
+        const idx = likes.indexOf(currentUser.uid);
+
+        if (idx > -1) {
+          likes.splice(idx, 1); // Batalkan like (dislike / toggle off)
+        } else {
+          likes.push(currentUser.uid); // Tambah like (toggle on)
+        }
+
+        try {
+          const { error } = await supabase
+            .from('kverse_posts')
+            .update({ likes: JSON.stringify(likes) })
+            .eq('id', post.id);
+
+          if(error) throw error;
+
+          post.likes = JSON.stringify(likes);
+          const likeBtn = document.getElementById('modal-like-btn');
+          if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
+          renderFeed();
+        } catch(e) {
+          alert("Gagal memproses suka: " + e.message);
+        }
+      },
+
+      submitComment: async function() {
+        if (!currentUser) {
+          alert("Silakan Login terlebih dahulu untuk menulis komentar!");
+          return;
+        }
+        if (!window.KVerseApp.activePost) return;
+
+        const input = document.getElementById('modal-comment-input');
+        const text = input ? input.value.trim() : '';
+        if (!text) return;
+
+        const post = window.KVerseApp.activePost;
+        let comments = safeParseArray(post.comments);
+        comments.push({
+          uid: currentUser.uid,
+          name: currentUser.name,
+          text: text,
+          time: Date.now()
+        });
+
+        try {
+          const { error } = await supabase
+            .from('kverse_posts')
+            .update({ comments: JSON.stringify(comments) })
+            .eq('id', post.id);
+
+          if(error) throw error;
+
+          post.comments = JSON.stringify(comments);
+          if(input) input.value = '';
+
+          // Render ulang kotak komentar di modal
+          const commentsBox = document.getElementById('modal-comments-box');
+          let cHtml = '';
+          comments.forEach(c => {
+            cHtml += `<div style="border-bottom: 1px solid rgb(30,30,30); padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> <span style="color: #fff;">${c.text}</span></div>`;
+          });
+          if(commentsBox) commentsBox.innerHTML = cHtml;
+          renderFeed();
+        } catch(e) {
+          alert("Gagal mengirim komentar: " + e.message);
+        }
+      },
+
+      pressDelete: async function() {
+        if (!window.KVerseApp.activePost) return;
+        if (!confirm("Yakin ingin menghapus postingan ini?")) return;
+
+        try {
+          const { error } = await supabase.from('kverse_posts').delete().eq('id', window.KVerseApp.activePost.id);
+          if(error) throw error;
+
+          window.KVerseUI.closeModal();
+          renderFeed();
+          renderMyGallery();
+          alert("Postingan berhasil dihapus.");
+        } catch(e) {
+          alert("Gagal menghapus: " + e.message);
+        }
+      },
+
+      toggleAuth: async function() {
+        if (!auth || !provider) {
+          alert("Firebase belum terinisialisasi dengan benar.");
+          return;
+        }
+
+        if (currentUser) {
+          if (confirm("Ingkeluar akun?")) {
+            await signOut(auth);
+            currentUser = null;
+            renderProfile();
+          }
+        } else {
+          try {
+            // Deteksi apakah dibuka di dalam iframe Blogger
+            const isInIframe = window.self !== window.top;
+            if (isInIframe) {
+              alert("Demi keamanan browser, login Google di dalam Iframe blog mungkin dibatasi. Silakan klik tombol 'Buka Aplikasi Full Layar untuk Login' di bawah profil!");
+            }
+            await signInWithPopup(auth, provider);
+          } catch(err) {
+            console.error("Auth Popup Error:", err);
+            alert("Gagal login dengan Popup. Silakan gunakan tombol 'Buka Aplikasi Full Layar untuk Login' di bawah tab Profil.");
+          }
+        }
+      },
+
+      uploadNewAvatar: async function(e) {
+        if (!currentUser) {
+          alert("Silakan login terlebih dahulu.");
+          return;
+        }
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const statusEl = document.getElementById('avatar-upload-status');
+        if(statusEl) statusEl.style.display = 'block';
+
+        compressAndResizeImage(file, async (base64) => {
+          try {
+            currentUser.avatar = base64;
+            await supabase.from('kverse_users').update({ avatar: base64 }).eq('uid', currentUser.uid);
+            renderProfile();
+            renderFeed();
+            if(statusEl) statusEl.style.display = 'none';
+            alert("Foto profil berhasil diperbarui!");
+          } catch(err) {
+            if(statusEl) statusEl.style.display = 'none';
+            alert("Gagal memperbarui foto profil.");
+          }
+        }, 150, 0.5);
+      }
+    };
   </script>
 </body>
 </html>
