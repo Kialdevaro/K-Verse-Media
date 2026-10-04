@@ -295,26 +295,26 @@
     let auth = null;
     let provider = null;
 
-    const aiGalleryPool = [
-      "https://picsum.photos/seed/kverse1/600/400",
-      "https://picsum.photos/seed/kverse2/600/400",
-      "https://picsum.photos/seed/kverse3/600/400",
-      "https://picsum.photos/seed/kverse4/600/400",
-      "https://picsum.photos/seed/kverse5/600/400",
-      "https://picsum.photos/seed/kverse6/600/400",
-      "https://picsum.photos/seed/kverse7/600/400",
-      "https://picsum.photos/seed/kverse8/600/400"
-    ];
-
-    function getPseudoRandom(seedStr, min, max) {
-      let hash = 0;
-      const str = String(seedStr || 'kverse');
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const richBotDataset = [
+      {
+        id: 101,
+        author_name: "Kialdevaro Gaming ⚡",
+        author_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        text: "Mabar game klasik PS1 langsung di browser emang paling juara! Tanpa ribet download, langsung 60fps mulus. 🕹️🔥",
+        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",
+        likes: JSON.stringify(["1", "2", "3", "4", "5", "6"]),
+        comments: JSON.stringify([{ name: "Rider", text: "Nostalgia banget parah!" }, { name: "Zenix", text: "Mantap infonya bro!" }])
+      },
+      {
+        id: 102,
+        author_name: "K-Verse Bot Alpha 🤖",
+        author_avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80",
+        text: "Lagi optimasi layout CSS & Flexbox kontainer buat Blogger Kialdevaro biar makin responsif di HP. 💻✨",
+        image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+        likes: JSON.stringify(["1", "2", "3", "4", "5"]),
+        comments: JSON.stringify([{ name: "Admin", text: "Semoga makin ngebut webnya!" }])
       }
-      const rnd = Math.abs(hash) % (max - min + 1);
-      return min + rnd;
-    }
+    ];
 
     function formatNum(num) {
       return new Intl.NumberFormat('id-ID').format(num || 0);
@@ -341,9 +341,7 @@
       if (!user) return false;
       const OWNER_EMAIL = "akunwildrift2020@gmail.com";
       const OWNER_FRIEND_ID = "KV-683419";
-      const emailMatch = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
-      const idMatch = user.friendId && user.friendId.trim() === OWNER_FRIEND_ID;
-      return emailMatch || idMatch;
+      return (user.email && user.email.toLowerCase().trim() === OWNER_EMAIL) || (user.friendId && user.friendId.trim() === OWNER_FRIEND_ID);
     }
 
     function compressAndResizeImage(file, callback, maxWidth = 350, quality = 0.4) {
@@ -364,8 +362,7 @@
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', quality);
-          callback(dataUrl);
+          callback(canvas.toDataURL('image/jpeg', quality));
         };
         img.src = e.target.result;
       };
@@ -443,8 +440,51 @@
         }
         renderProfile();
         renderFeed();
+        startOrganicXpTracker(); // Mulai hitung 30 menit XP Organik
       } catch(err) {
         console.error("User Sync Error:", err);
+      }
+    }
+
+    // Logika XP Organik: +30 sampai 50 XP setiap aktif 30 menit di web
+    function startOrganicXpTracker() {
+      if (!currentUser) return;
+      let sessionStart = safeStorage.getItem('kverse_session_start_' + currentUser.uid);
+      if (!sessionStart) {
+        sessionStart = Date.now().toString();
+        safeStorage.setItem('kverse_session_start_' + currentUser.uid, sessionStart);
+      }
+
+      const thirtyMinutes = 30 * 60 * 1000;
+      const elapsed = Date.now() - parseInt(sessionStart);
+
+      if (elapsed >= thirtyMinutes) {
+        const claimed = safeStorage.getItem('kverse_xp_claimed_' + currentUser.uid + '_' + sessionStart);
+        if (!claimed) {
+          claimOrganicXp(sessionStart);
+        }
+      } else {
+        const remaining = thirtyMinutes - elapsed;
+        setTimeout(() => claimOrganicXp(sessionStart), remaining);
+      }
+    }
+
+    async function claimOrganicXp(sessionKey) {
+      if (!currentUser) return;
+      const claimed = safeStorage.getItem('kverse_xp_claimed_' + currentUser.uid + '_' + sessionKey);
+      if (claimed) return;
+
+      const randomXp = Math.floor(Math.random() * 21) + 30; // 30 s/d 50 XP
+      currentUser.xp = (currentUser.xp || 100) + randomXp;
+
+      try {
+        await supabase.from('kverse_users').update({ xp: currentUser.xp }).eq('uid', currentUser.uid);
+        safeStorage.setItem('kverse_xp_claimed_' + currentUser.uid + '_' + sessionKey, 'true');
+        safeStorage.removeItem('kverse_session_start_' + currentUser.uid);
+        renderProfile();
+        alert(`🎉 Selamat! Anda aktif di web selama 30 menit dan mendapatkan +${randomXp} XP!`);
+      } catch(e) {
+        console.error("Gagal memperbarui XP Organik:", e);
       }
     }
 
@@ -471,104 +511,23 @@
       renderMyGallery();
     }
 
-    // Render Feed dengan Sistem Fallback Anti-Kosong
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
 
       let posts = [];
-      let bots = [];
-
       try {
         if (supabase) {
-          const postsRes = await supabase.from('kverse_posts').select('*');
-          if (postsRes.data) posts = postsRes.data;
-
-          const botsRes = await supabase.from('kverse_bots').select('*');
-          if (botsRes.data && botsRes.data.length > 0) {
-            bots = botsRes.data.map((b, idx) => {
-              let rawImg = b.image || b.image_url || b.photo || b.img || b.picture || b.url || b.gambar || b.media || b.file || '';
-              if (!rawImg || rawImg.trim() === '') {
-                rawImg = aiGalleryPool[idx % aiGalleryPool.length];
-              }
-
-              const uniqueId = b.id !== undefined ? b.id : idx;
-
-              let rawLikes = safeParseArray(b.likes);
-              if (rawLikes.length === 0) {
-                const fakeLikeCount = getPseudoRandom(uniqueId + 'like', 5, 40);
-                rawLikes = Array.from({length: fakeLikeCount}, (_, i) => 'bot-like-' + i);
-              }
-
-              let rawComments = safeParseArray(b.comments);
-              if (rawComments.length === 0) {
-                const fakeCommentCount = getPseudoRandom(uniqueId + 'comm', 1, 5);
-                const sampleComments = [
-                  { name: "CyberGamer", text: "Mantap infonya bro! 🔥" },
-                  { name: "Kialdevaro Fan", text: "Keren banget nih projectnya 👏" },
-                  { name: "PlayerX", text: "Ikut menyimak abangku ✨" },
-                  { name: "RiderNight", text: "Gokil, lanjut terus updatenya!" },
-                  { name: "Zenix", text: "Setuju banget sama postingan ini!" }
-                ];
-                rawComments = [];
-                for(let c=0; c<fakeCommentCount; c++) {
-                  rawComments.push(sampleComments[(uniqueId + c) % sampleComments.length]);
-                }
-              }
-
-              return {
-                id: 'bot-' + uniqueId,
-                dbId: uniqueId,
-                author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
-                author_avatar: b.avatar || b.author_avatar || b.photo_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-                text: b.text || b.content || b.caption || b.message || b.body || 'Berbagi keseruan gaming hari ini! 🎮',
-                image: rawImg,
-                likes: rawLikes,
-                comments: rawComments,
-                created_at: b.created_at || new Date().toISOString(),
-                isBot: true
-              };
-            });
-          }
+          const { data } = await supabase.from('kverse_posts').select('*').order('created_at', { ascending: false });
+          if (data && data.length > 0) posts = data;
         }
-      } catch(err) {
-        console.warn("Menggunakan data fallback bot.");
-      }
+      } catch(e) {}
 
-      // Fallback Otomatis jika tabel bot kosong agar linimasa tetap ramai
-      if (bots.length === 0) {
-        bots = [
-          {
-            id: 'bot-fallback-1',
-            dbId: 1,
-            author_name: 'K-Verse Bot Alpha 🤖',
-            author_avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-            text: 'Mabar game klasik PS1 langsung di browser emang paling juara! 🕹️🔥',
-            image: aiGalleryPool[0],
-            likes: ['1', '2', '3', '4', '5'],
-            comments: [{ name: 'Rider', text: 'Nostalgia banget parah!' }],
-            created_at: new Date().toISOString(),
-            isBot: true
-          },
-          {
-            id: 'bot-fallback-2',
-            dbId: 2,
-            author_name: 'Kialdevaro Gaming ⚡',
-            author_avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
-            text: 'Ngecek statistik trafik blog hari ini, lumayan banget naiknya! 📈✨',
-            image: aiGalleryPool[1],
-            likes: ['1', '2', '3', '4', '5', '6', '7'],
-            comments: [{ name: 'Admin', text: 'Semoga konsisten terus!' }],
-            created_at: new Date().toISOString(),
-            isBot: true
-          }
-        ];
-      }
-
-      cachedPosts = [...bots, ...posts];
+      if (posts.length === 0) posts = richBotDataset;
+      cachedPosts = posts;
 
       let html = '';
-      cachedPosts.forEach((post, index) => {
+      cachedPosts.forEach((post) => {
         const likes = safeParseArray(post.likes);
         const comments = safeParseArray(post.comments);
         const hasImage = post.image && post.image.trim() !== '';
@@ -578,7 +537,7 @@
             <div style="align-items: center; display: flex; gap: 8px; margin-bottom: 8px;">
               <img src="${post.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
               <div>
-                <div style="color: ${post.isBot ? '#00ffcc' : '#ffc107'}; font-size: 12px; font-weight: bold;">${post.author_name} ${post.isBot ? '🤖' : ''}</div>
+                <div style="color: #00ffcc; font-size: 12px; font-weight: bold;">${post.author_name || 'K-Verse Bot'} 🤖</div>
                 <div style="color: #777777; font-size: 10px;">${formatDate(post.created_at)}</div>
               </div>
             </div>
@@ -594,34 +553,6 @@
             </div>
           </div>
         `;
-
-        if ((index + 1) % 30 === 0) {
-          const cycle = Math.floor((index + 1) / 30) % 3;
-          if (cycle === 1) {
-            html += `
-              <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(35, 20, 10)); border-radius: 10px; border: 1px solid rgb(255, 153, 0); padding: 12px; width: 100%; text-align: center;">
-                <div style="color: #ff9900; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🔥 Kialdevaro Gaming Artikel</div>
-                <h4 style="color: #ffffff; font-size: 13px; margin: 0px 0px 8px;">Baca Artikel Berita & Tips Seputar Gaming Terbaru!</h4>
-                <a href="https://kialdevaro-gamingid.blogspot.com/p/kialdevaro-gaming.html" target="_blank" style="display: inline-block; background: rgb(255, 153, 0); border-radius: 6px; color: #000000; font-size: 11px; font-weight: bold; padding: 6px 14px; text-decoration: none;">Baca Artikel Sekarang</a>
-              </div>
-            `;
-          } else if (cycle === 2) {
-            html += `
-              <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(10, 30, 35)); border-radius: 10px; border: 1px solid rgb(0, 255, 204); padding: 12px; width: 100%; text-align: center;">
-                <div style="color: #00ffcc; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🎮 Kialdevaro Game Hub</div>
-                <h4 style="color: #ffffff; font-size: 13px; margin: 0px 0px 8px;">Mainkan Ratusan Game Seru Langsung di Browser!</h4>
-                <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_blank" style="display: inline-block; background: rgb(0, 255, 204); border-radius: 6px; color: #000000; font-size: 11px; font-weight: bold; padding: 6px 14px; text-decoration: none;">Buka Game Hub</a>
-              </div>
-            `;
-          } else {
-            html += `
-              <div style="background: rgb(18, 18, 18); border-radius: 10px; border: 1px solid rgb(51, 51, 51); padding: 12px; width: 100%; text-align: center;">
-                <div style="color: #888888; font-size: 9px; margin-bottom: 4px; text-transform: uppercase;">Sponsor / Iklan Monetag</div>
-                <div style="color: #aaaaaa; font-size: 11px; padding: 6px;">[Slot Iklan Monetag Aktif]</div>
-              </div>
-            `;
-          }
-        }
       });
       feedBox.innerHTML = html;
     }
@@ -631,18 +562,14 @@
       if (!rankBox) return;
 
       let users = [
-        { name: 'Kialdevaro Gaming 🤖', friendId: 'KV-683419', xp: 3500, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' },
-        { name: 'K-Verse Bot Alpha ⚡', friendId: 'KV-999001', xp: 2850, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png' },
-        { name: 'CyberExplorer 🌐', friendId: 'KV-777333', xp: 1920, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712128.png' },
-        { name: 'GameMaster ID 🎮', friendId: 'KV-555888', xp: 1400, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' }
+        { name: 'Kialdevaro Gaming 🤖', friendId: 'KV-683419', xp: 3500, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+        { name: 'K-Verse Bot Alpha ⚡', friendId: 'KV-999001', xp: 2850, avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80' }
       ];
 
       try {
         if (supabase) {
           const { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
-          if (data && data.length > 0) {
-            users = data;
-          }
+          if (data && data.length > 0) users = data;
         }
       } catch(e) {}
 
@@ -694,7 +621,7 @@
             `;
           }
         });
-        galleryBox.innerHTML = html || '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada postingan foto.</span>';
+        galleryBox.innerHTML = html;
       } catch(e) {}
     }
 
@@ -808,30 +735,16 @@
         let likes = safeParseArray(post.likes);
         const idx = likes.indexOf(currentUser.uid);
 
-        if (idx > -1) {
-          likes.splice(idx, 1);
-        } else {
-          likes.push(currentUser.uid);
-        }
+        if (idx > -1) likes.splice(idx, 1);
+        else likes.push(currentUser.uid);
 
         try {
-          const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
-          const targetId = post.isBot ? post.dbId : post.id;
-
-          const { error } = await supabase
-            .from(targetTable)
-            .update({ likes: JSON.stringify(likes) })
-            .eq('id', targetId);
-
-          if(error) throw error;
-
+          await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', post.id);
           post.likes = JSON.stringify(likes);
           const likeBtn = document.getElementById('modal-like-btn');
           if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
           renderFeed();
-        } catch(e) {
-          alert("Gagal memproses suka: " + e.message);
-        }
+        } catch(e) {}
       },
 
       submitComment: async function() {
@@ -847,24 +760,10 @@
 
         const post = window.KVerseApp.activePost;
         let comments = safeParseArray(post.comments);
-        comments.push({
-          uid: currentUser.uid,
-          name: currentUser.name,
-          text: text,
-          time: Date.now()
-        });
+        comments.push({ uid: currentUser.uid, name: currentUser.name, text: text, time: Date.now() });
 
         try {
-          const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
-          const targetId = post.isBot ? post.dbId : post.id;
-
-          const { error } = await supabase
-            .from(targetTable)
-            .update({ comments: JSON.stringify(comments) })
-            .eq('id', targetId);
-
-          if(error) throw error;
-
+          await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', post.id);
           post.comments = JSON.stringify(comments);
           if(input) input.value = '';
 
@@ -875,9 +774,7 @@
           });
           if(commentsBox) commentsBox.innerHTML = cHtml;
           renderFeed();
-        } catch(e) {
-          alert("Gagal mengirim komentar: " + e.message);
-        }
+        } catch(e) {}
       },
 
       pressDelete: async function() {
@@ -886,27 +783,16 @@
 
         try {
           const post = window.KVerseApp.activePost;
-          const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
-          const targetId = post.isBot ? post.dbId : post.id;
-
-          const { error } = await supabase.from(targetTable).delete().eq('id', targetId);
-          if(error) throw error;
-
+          await supabase.from('kverse_posts').delete().eq('id', post.id);
           window.KVerseUI.closeModal();
           renderFeed();
           renderMyGallery();
           alert("Postingan berhasil dihapus.");
-        } catch(e) {
-          alert("Gagal menghapus: " + e.message);
-        }
+        } catch(e) {}
       },
 
       toggleAuth: async function() {
-        if (!auth || !provider) {
-          alert("Firebase belum terinisialisasi dengan benar.");
-          return;
-        }
-
+        if (!auth || !provider) return;
         if (currentUser) {
           if (confirm("Ingin keluar akun?")) {
             await signOut(auth);
@@ -917,18 +803,12 @@
           try {
             safeStorage.setItem('kverse_active_tab', 'profile');
             await signInWithPopup(auth, provider);
-          } catch(err) {
-            console.error("Auth Popup Error:", err);
-            alert("Gagal login dengan Popup. Pastikan domain GitHub Pages kamu sudah terdaftar di Authorized Domains Firebase Console.");
-          }
+          } catch(err) {}
         }
       },
 
       uploadNewAvatar: async function(e) {
-        if (!currentUser) {
-          alert("Silakan login terlebih dahulu.");
-          return;
-        }
+        if (!currentUser) return;
         const file = e.target.files[0];
         if(!file) return;
 
@@ -945,7 +825,6 @@
             alert("Foto profil berhasil diperbarui!");
           } catch(err) {
             if(statusEl) statusEl.style.display = 'none';
-            alert("Gagal memperbarui foto profil.");
           }
         }, 150, 0.5);
       }
