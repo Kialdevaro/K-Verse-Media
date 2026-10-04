@@ -302,7 +302,7 @@
     function formatDate(timestamp) {
       if(!timestamp) return '';
       const d = new Date(timestamp);
-      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return isNaN(d.getTime()) ? '' : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     function safeParseArray(val) {
@@ -452,7 +452,7 @@
       renderMyGallery();
     }
 
-    // Render Feed / Beranda dengan Debug Error Detail
+    // Render Feed / Beranda (Tanpa error kolom created_at)
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
@@ -464,8 +464,7 @@
       try {
         const { data, error } = await supabase
           .from('kverse_posts')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('*');
 
         if (error) throw error;
         cachedPosts = data || [];
@@ -590,7 +589,7 @@
       }
 
       try {
-        const { data } = await supabase.from('kverse_posts').select('*').eq('author_uid', currentUser.uid).order('created_at', { ascending: false });
+        const { data } = await supabase.from('kverse_posts').select('*').eq('author_uid', currentUser.uid);
         if (!data || data.length === 0) {
           galleryBox.innerHTML = '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada postingan foto.</span>';
           return;
@@ -688,7 +687,7 @@
         }
 
         const likes = safeParseArray(found.likes);
-        if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
+        if(likeBtn) likeBtn.innerHTML = `❤️️ Suka (${likes.length})`;
 
         if(currentUser && (currentUser.uid === found.author_uid || isUserOwner(currentUser))) {
           if(delBtn) delBtn.style.display = 'block';
