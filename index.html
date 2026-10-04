@@ -17,28 +17,26 @@
       overflow-x: hidden;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
     #kialdevaro-community-hub {
       max-width: 100% !important;
       width: 100% !important;
       min-height: 100vh !important;
-      box-sizing: border-box;
       margin: 0 !important;
       display: flex;
       flex-direction: column;
-      padding: 16px;
+      padding: 12px;
       background: rgb(16, 16, 16);
     }
 
-    #view-feed {
+    .tab-view {
       display: flex;
       flex-direction: column;
+      width: 100%;
       flex: 1;
-    }
-
-    #feed-box {
-      flex: 1;
-      max-height: none !important;
-      overflow-y: auto;
     }
 
     .action-btn {
@@ -53,97 +51,97 @@
   <div id="kialdevaro-community-hub">
     
     <!--HEADER-->
-    <div style="align-items: center; border-bottom: 1px solid rgb(34, 34, 34); display: flex; justify-content: space-between; margin-bottom: 14px; padding-bottom: 12px;">
+    <div style="align-items: center; border-bottom: 1px solid rgb(34, 34, 34); display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; width: 100%;">
       <div>
-        <h3 style="color: #00ffcc; font-size: 17px; font-weight: 700; margin: 0px 0px 2px;">🌐 K-Verse Global Network</h3>
-        <span style="color: #888888; font-size: 12px;">Linimasa Komunitas &amp; Papan Skor Supabase Cloud (Live 24/7)</span>
+        <h3 style="color: #00ffcc; font-size: 16px; font-weight: 700; margin: 0px 0px 2px;">🌐 K-Verse Global Network</h3>
+        <span style="color: #888888; font-size: 11px;">Linimasa Komunitas &amp; Papan Skor Supabase Cloud</span>
       </div>
-      <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_top" style="background: rgb(255, 85, 0); border-radius: 6px; color: white; font-size: 12px; font-weight: bold; padding: 7px 14px; text-decoration: none;">Game Hub</a>
+      <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_top" style="background: rgb(255, 85, 0); border-radius: 6px; color: white; font-size: 11px; font-weight: bold; padding: 6px 12px; text-decoration: none; white-space: nowrap;">Game Hub</a>
     </div>
 
     <!--NAVIGASI TAB-->
-    <div style="display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); margin-bottom: 14px;">
-      <button id="nav-feed" class="nav-tab-btn" data-tab="feed" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(0, 255, 204); color: #00ffcc; cursor: pointer; font-size: 13px; font-weight: bold; padding: 10px;">Beranda</button>
-      <button id="nav-rank" class="nav-tab-btn" data-tab="rank" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 153, 0); color: #ff9900; cursor: pointer; font-size: 13px; font-weight: bold; padding: 10px;">Papan Skor</button>
-      <button id="nav-profile" class="nav-tab-btn" data-tab="profile" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 193, 7); color: #ffc107; cursor: pointer; font-size: 13px; font-weight: bold; padding: 10px;">Profil Saya</button>
+    <div style="display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; width: 100%;">
+      <button id="nav-feed" class="nav-tab-btn" data-tab="feed" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(0, 255, 204); color: #00ffcc; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Beranda</button>
+      <button id="nav-rank" class="nav-tab-btn" data-tab="rank" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 153, 0); color: #ff9900; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Papan Skor</button>
+      <button id="nav-profile" class="nav-tab-btn" data-tab="profile" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 193, 7); color: #ffc107; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Profil Saya</button>
     </div>
 
     <!--1. TAB BERANDA-->
-    <div id="view-feed" style="display: flex; flex-direction: column; flex: 1;">
-      <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 14px; padding: 14px; flex-shrink: 0;">
-        <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 14px; height: 75px; margin-bottom: 10px; outline: none; padding: 10px; resize: none; width: 100%;"></textarea>
+    <div id="view-feed" class="tab-view" style="display: flex;">
+      <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 12px; padding: 12px; width: 100%;">
+        <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 13px; height: 70px; margin-bottom: 8px; outline: none; padding: 8px; resize: none; width: 100%;"></textarea>
         
-        <div style="align-items: center; display: flex; justify-content: space-between;">
+        <div style="align-items: center; display: flex; justify-content: space-between; width: 100%;">
           <input accept="image/*" id="post-file" style="display: none;" type="file" />
-          <button id="select-img-btn" class="action-btn" style="background: rgb(34, 34, 34); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: #00ffcc; font-size: 13px; padding: 8px 14px;">🖼 Pilih Foto</button>
-          <button id="submit-post-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 13px; font-weight: bold; padding: 8px 18px;">Posting</button>
+          <button id="select-img-btn" class="action-btn" style="background: rgb(34, 34, 34); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: #00ffcc; font-size: 12px; padding: 6px 12px;">🖼 Pilih Foto</button>
+          <button id="submit-post-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 6px 16px;">Posting</button>
         </div>
 
-        <div id="preview-box" style="display: none; height: 85px; margin-top: 10px; position: relative; width: 85px;">
+        <div id="preview-box" style="display: none; height: 80px; margin-top: 8px; position: relative; width: 80px;">
           <img id="preview-tag" src="" style="border-radius: 6px; height: 100%; object-fit: cover; width: 100%;" />
-          <button id="clear-img-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 11px; height: 24px; position: absolute; right: -6px; top: -6px; width: 24px;">X</button>
+          <button id="clear-img-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 10px; height: 22px; position: absolute; right: -5px; top: -5px; width: 22px;">X</button>
         </div>
-        <span id="upload-status" style="color: #ff9900; display: none; font-size: 12px; margin-top: 8px;">Sedang memproses &amp; mengompres foto...</span>
+        <span id="upload-status" style="color: #ff9900; display: none; font-size: 11px; margin-top: 6px;">Sedang memproses &amp; mengompres foto...</span>
       </div>
 
-      <div id="feed-box" style="display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px; flex: 1;">
-        <p style="color: #777777; font-size: 14px; padding: 30px; text-align: center;">Memuat linimasa global...</p>
+      <div id="feed-box" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+        <p style="color: #777777; font-size: 13px; padding: 20px; text-align: center;">Memuat linimasa global...</p>
       </div>
     </div>
 
     <!--2. TAB PAPAN SKOR-->
-    <div id="view-rank" style="display: none; flex: 1;">
-      <h4 style="color: #ff9900; font-size: 15px; font-weight: 600; margin: 0px 0px 10px;">Papan Skor Global Anggota</h4>
-      <div id="rank-box" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1;"></div>
+    <div id="view-rank" class="tab-view" style="display: none;">
+      <h4 style="color: #ff9900; font-size: 14px; font-weight: 600; margin: 0px 0px 10px; width: 100%;">Papan Skor Global Anggota</h4>
+      <div id="rank-box" style="display: flex; flex-direction: column; gap: 8px; width: 100%;"></div>
     </div>
 
     <!--3. TAB PROFIL-->
-    <div id="view-profile" style="display: none; flex: 1;">
-      <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 14px; padding: 14px; flex-shrink: 0;">
-        <div style="align-items: center; display: flex; gap: 12px;">
-          <div id="avatar-trigger" class="action-btn" style="position: relative;" title="Ketuk untuk ganti foto profil">
-            <img id="my-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" style="border-radius: 50%; border: 2px solid rgb(255, 193, 7); height: 56px; object-fit: cover; width: 56px;" />
-            <span style="background: rgb(255, 85, 0); border-radius: 50%; bottom: 0px; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; height: 20px; position: absolute; right: 0px; width: 20px;">📷</span>
+    <div id="view-profile" class="tab-view" style="display: none;">
+      <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 12px; padding: 12px; width: 100%;">
+        <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
+          <div id="avatar-trigger" class="action-btn" style="position: relative; flex-shrink: 0;" title="Ketuk untuk ganti foto profil">
+            <img id="my-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" style="border-radius: 50%; border: 2px solid rgb(255, 193, 7); height: 50px; object-fit: cover; width: 50px;" />
+            <span style="background: rgb(255, 85, 0); border-radius: 50%; bottom: 0px; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; height: 18px; position: absolute; right: 0px; width: 18px;">📷</span>
           </div>
           <input accept="image/*" id="avatar-file-input" style="display: none;" type="file" />
-          <div>
-            <h4 id="my-name" style="color: #ffc107; font-size: 15px; margin: 0px 0px 3px;">Tamu (Belum Login)</h4>
-            <span id="my-id" style="color: #00ffcc; display: block; font-size: 12px; font-weight: bold;">ID: #KV-000000</span>
-            <span id="my-xp" style="color: #aaaaaa; font-size: 12px;">Total XP: 0</span>
+          <div style="min-width: 0; flex: 1;">
+            <h4 id="my-name" style="color: #ffc107; font-size: 14px; margin: 0px 0px 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Tamu (Belum Login)</h4>
+            <span id="my-id" style="color: #00ffcc; display: block; font-size: 11px; font-weight: bold;">ID: #KV-000000</span>
+            <span id="my-xp" style="color: #aaaaaa; font-size: 11px;">Total XP: 0</span>
           </div>
         </div>
-        <button id="auth-btn" class="action-btn" style="background: white; border: none; border-radius: 6px; color: black; font-size: 13px; font-weight: bold; padding: 8px 16px;">Login Google</button>
+        <button id="auth-btn" class="action-btn" style="background: white; border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 7px 12px; flex-shrink: 0; margin-left: 8px;">Login</button>
       </div>
 
-      <span id="avatar-upload-status" style="color: #ff9900; display: none; font-size: 12px; margin-bottom: 8px; text-align: center;">Menyimpan foto profil baru...</span>
-      <h4 style="color: #ffc107; font-size: 14px; margin: 0px 0px 8px; flex-shrink: 0;">Galeri Postingan Anda (Maks. 50 Foto)</h4>
-      <div id="my-gallery" style="display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); overflow-y: auto; flex: 1;"></div>
+      <span id="avatar-upload-status" style="color: #ff9900; display: none; font-size: 11px; margin-bottom: 6px; text-align: center; width: 100%;">Menyimpan foto profil baru...</span>
+      <h4 style="color: #ffc107; font-size: 13px; margin: 0px 0px 8px; width: 100%;">Galeri Postingan Anda (Maks. 50 Foto)</h4>
+      <div id="my-gallery" style="display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); width: 100%; padding-bottom: 20px;"></div>
     </div>
 
   </div>
 
   <!--MODAL DETAIL POSTINGAN-->
-  <div id="detail-modal" style="align-items: center; background: rgba(0, 0, 0, 0.85); box-sizing: border-box; display: none; height: 100%; justify-content: center; left: 0px; padding: 14px; position: fixed; top: 0px; width: 100%; z-index: 99999;">
-    <div style="background: rgb(22, 22, 22); border-radius: 12px; border: 1px solid rgb(51, 51, 51); max-height: 85vh; max-width: 450px; overflow-y: auto; padding: 16px; position: relative; width: 100%;">
-      <button id="close-modal-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 13px; font-weight: bold; height: 30px; position: absolute; right: 12px; top: 12px; width: 30px;">X</button>
+  <div id="detail-modal" style="align-items: center; background: rgba(0, 0, 0, 0.85); box-sizing: border-box; display: none; height: 100%; justify-content: center; left: 0px; padding: 12px; position: fixed; top: 0px; width: 100%; z-index: 99999;">
+    <div style="background: rgb(22, 22, 22); border-radius: 12px; border: 1px solid rgb(51, 51, 51); max-height: 85vh; max-width: 450px; overflow-y: auto; padding: 14px; position: relative; width: 100%;">
+      <button id="close-modal-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 12px; font-weight: bold; height: 28px; position: absolute; right: 10px; top: 10px; width: 28px;">X</button>
       
-      <div id="modal-img-box" style="background: rgb(0, 0, 0); border-radius: 6px; display: none; margin-bottom: 12px; overflow: hidden; text-align: center;">
-        <img id="modal-img-tag" src="" style="max-height: 240px; max-width: 100%; object-fit: contain;" />
+      <div id="modal-img-box" style="background: rgb(0, 0, 0); border-radius: 6px; display: none; margin-bottom: 10px; overflow: hidden; text-align: center; width: 100%;">
+        <img id="modal-img-tag" src="" style="max-height: 220px; max-width: 100%; object-fit: contain;" />
       </div>
 
-      <p id="modal-text-tag" style="color: white; font-size: 14px; line-height: 1.5; margin: 0px 0px 12px; word-break: break-word;"></p>
+      <p id="modal-text-tag" style="color: white; font-size: 13px; line-height: 1.5; margin: 0px 0px 10px; word-break: break-word;"></p>
       
-      <div style="align-items: center; border-bottom: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px;">
-        <button id="modal-like-btn" class="action-btn" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 8px; color: #ff9900; font-size: 14px; font-weight: bold; padding: 6px 12px; white-space: nowrap;">❤️ Suka (0)</button>
-        <button id="modal-del-btn" class="action-btn" style="background: rgba(255, 85, 0, 0.2); border-radius: 4px; border: 1px solid rgb(255, 85, 0); color: #ff5500; display: none; font-size: 12px; font-weight: bold; padding: 6px 12px;">Hapus Post</button>
+      <div style="align-items: center; border-bottom: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px;">
+        <button id="modal-like-btn" class="action-btn" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 8px; color: #ff9900; font-size: 13px; font-weight: bold; padding: 6px 10px; white-space: nowrap;">❤️ Suka (0)</button>
+        <button id="modal-del-btn" class="action-btn" style="background: rgba(255, 85, 0, 0.2); border-radius: 4px; border: 1px solid rgb(255, 85, 0); color: #ff5500; display: none; font-size: 11px; font-weight: bold; padding: 6px 10px;">Hapus Post</button>
       </div>
 
-      <div style="color: #aaaaaa; font-size: 13px; font-weight: bold; margin-bottom: 6px;">Komentar:</div>
-      <div id="modal-comments-box" style="background: rgb(13, 13, 13); border-radius: 6px; display: flex; flex-direction: column; font-size: 13px; gap: 8px; margin-bottom: 12px; max-height: 130px; overflow-y: auto; padding: 10px;"></div>
+      <div style="color: #aaaaaa; font-size: 12px; font-weight: bold; margin-bottom: 4px;">Komentar:</div>
+      <div id="modal-comments-box" style="background: rgb(13, 13, 13); border-radius: 6px; display: flex; flex-direction: column; font-size: 12px; gap: 6px; margin-bottom: 10px; max-height: 120px; overflow-y: auto; padding: 8px;"></div>
       
-      <div style="display: flex; gap: 8px;">
-        <input id="modal-comment-input" placeholder="Tulis komentar..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: white; flex: 1; font-size: 13px; outline: none; padding: 10px;" type="text" />
-        <button id="modal-comment-submit-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 13px; font-weight: bold; padding: 10px 16px;">Kirim</button>
+      <div style="display: flex; gap: 6px; width: 100%;">
+        <input id="modal-comment-input" placeholder="Tulis komentar..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: white; flex: 1; font-size: 12px; outline: none; padding: 8px;" type="text" />
+        <button id="modal-comment-submit-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 8px 14px;">Kirim</button>
       </div>
     </div>
   </div>
@@ -480,7 +478,7 @@
     async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
       if(!rankBox) return;
-      rankBox.innerHTML = '<p style="color: #777; font-size: 14px; text-align: center;">Memuat papan skor...</p>';
+      rankBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center;">Memuat papan skor...</p>';
       
       let allUsers = [];
       try {
@@ -521,20 +519,20 @@
         const borderStyle = isMe ? 'border: 1px solid #00ffcc;' : 'border: 1px solid #262626;';
 
         html += `
-          <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; ${borderStyle} display: flex; justify-content: space-between; padding: 12px 14px;">
-            <div style="align-items: center; display: flex; gap: 12px;">
-              <span style="color: ${idx===0?'#ffd700':idx===1?'#c0c0c0':idx===2?'#cd7f32':'#777'}; font-size: 14px; font-weight: bold; width: 24px;">#${idx+1}</span>
-              <img src="${u.authorAvatar}" style="border-radius: 50%; height: 40px; object-fit: cover; width: 40px;" />
-              <div>
-                <div style="color: ${isMe?'#00ffcc':'white'}; font-size: 14px; font-weight: bold;">${displayName}</div>
-                <span style="color: #888; font-size: 12px;">${u.authorFriendId}</span>
+          <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; ${borderStyle} display: flex; justify-content: space-between; padding: 10px 12px; width: 100%;">
+            <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
+              <span style="color: ${idx===0?'#ffd700':idx===1?'#c0c0c0':idx===2?'#cd7f32':'#777'}; font-size: 13px; font-weight: bold; width: 22px; flex-shrink: 0;">#${idx+1}</span>
+              <img src="${u.authorAvatar}" style="border-radius: 50%; height: 36px; object-fit: cover; width: 36px; flex-shrink: 0;" />
+              <div style="min-width: 0; flex: 1;">
+                <div style="color: ${isMe?'#00ffcc':'white'}; font-size: 13px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</div>
+                <span style="color: #888; font-size: 11px;">${u.authorFriendId}</span>
               </div>
             </div>
-            <span style="color: #ff9900; font-size: 14px; font-weight: bold;">${formatNum(u.xp)} XP</span>
+            <span style="color: #ff9900; font-size: 13px; font-weight: bold; flex-shrink: 0; margin-left: 8px;">${formatNum(u.xp)} XP</span>
           </div>
         `;
       });
-      rankBox.innerHTML = html || '<p style="color: #777; font-size: 14px; text-align: center;">Belum ada data.</p>';
+      rankBox.innerHTML = html || '<p style="color: #777; font-size: 13px; text-align: center;">Belum ada data.</p>';
     }
 
     async function renderProfile() {
@@ -546,8 +544,8 @@
         document.getElementById('my-id').innerText = "ID: #KV-000000";
         document.getElementById('my-xp').innerText = "Total XP: 0";
         document.getElementById('my-avatar').src = "https://cdn-icons-png.flaticon.com/512/147/147144.png";
-        document.getElementById('auth-btn').innerText = "Login Google";
-        document.getElementById('my-gallery').innerHTML = '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Login untuk melihat galeri.</p>';
+        document.getElementById('auth-btn').innerText = "Login";
+        document.getElementById('my-gallery').innerHTML = '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Login untuk melihat galeri.</p>';
         return;
       }
 
@@ -558,7 +556,7 @@
       document.getElementById('auth-btn').innerText = "Keluar";
 
       const gallery = document.getElementById('my-gallery');
-      gallery.innerHTML = '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Memuat galeri...</p>';
+      gallery.innerHTML = '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Memuat galeri...</p>';
       try {
         if (supabase) {
           const { data: posts } = await supabase
@@ -572,14 +570,14 @@
             posts.forEach(p => {
               const imgUrl = p.imageUrl || p.imageurl;
               if(imgUrl) {
-                myPostsHtml += `<div style="background:#000; border-radius:6px; height:95px; overflow:hidden;"><img src="${imgUrl}" style="height:100%; object-fit:cover; width:100%;" /></div>`;
+                myPostsHtml += `<div style="background:#000; border-radius:6px; aspect-ratio: 1; overflow:hidden;"><img src="${imgUrl}" style="height:100%; object-fit:cover; width:100%; display:block;" /></div>`;
               }
             });
           }
-          gallery.innerHTML = myPostsHtml || '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Belum ada postingan foto.</p>';
+          gallery.innerHTML = myPostsHtml || '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Belum ada postingan foto (Maks. 50).</p>';
         }
       } catch(e) {
-        gallery.innerHTML = '<p style="color:#777; font-size:13px; grid-column:span 3; text-align:center;">Gagal memuat galeri.</p>';
+        gallery.innerHTML = '<p style="color:#777; font-size:12px; grid-column:span 3; text-align:center; padding: 20px 0;">Gagal memuat galeri.</p>';
       }
     }
 
@@ -603,7 +601,7 @@
       const hasLiked = currentUser && activePost.likedBy && activePost.likedBy.includes(currentUser.uid);
       const likeBtn = document.getElementById('modal-like-btn');
       if(likeBtn) {
-        likeBtn.innerHTML = `❤️ Suka (${formatNum(activePost.likes || 0)})`;
+        likeBtn.innerHTML = `❤️️ Suka (${formatNum(activePost.likes || 0)})`;
         likeBtn.style.color = hasLiked ? '#ff5500' : '#ff9900';
         likeBtn.style.borderColor = hasLiked ? '#ff5500' : 'rgba(255,153,0,0.4)';
       }
@@ -695,7 +693,7 @@
       
       const commentsList = safeParseArray(activePost ? activePost.comments : []);
       if(commentsList.length === 0) {
-        box.innerHTML = '<span style="color:#777; text-align:center; padding:8px;">Belum ada komentar.</span>';
+        box.innerHTML = '<span style="color:#777; text-align:center; padding:6px;">Belum ada komentar.</span>';
         return;
       }
 
@@ -740,7 +738,7 @@
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if(!feedBox) return;
-      feedBox.innerHTML = '<p style="color: #777; font-size: 14px; text-align: center;">Memuat linimasa...</p>';
+      feedBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center;">Memuat linimasa...</p>';
       
       let posts = [];
       try {
@@ -794,30 +792,30 @@
         const formattedComments = formatNum(commentsArr.length);
 
         html += `
-          <div style="background: rgb(22, 22, 22); border-radius: 12px; border: 1px solid rgb(38, 38, 38); padding: 16px; flex-shrink: 0; margin-bottom: 6px;">
-            <div style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 12px;">
-              <div style="align-items: center; display: flex; gap: 12px;">
-                <img src="${p.authorAvatar}" style="border-radius: 50%; height: 46px; object-fit: cover; width: 46px;" />
-                <div>
-                  <div style="color: white; font-size: 15px; font-weight: bold;">${p.authorName}</div>
-                  <span style="color: #999; font-size: 12px;">${p.authorFriendId}</span>
+          <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
+            <div style="align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; width: 100%;">
+              <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
+                <img src="${p.authorAvatar}" style="border-radius: 50%; height: 40px; object-fit: cover; width: 40px; flex-shrink: 0;" />
+                <div style="min-width: 0; flex: 1;">
+                  <div style="color: white; font-size: 14px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.authorName}</div>
+                  <span style="color: #999; font-size: 11px;">${p.authorFriendId}</span>
                 </div>
               </div>
-              <span style="color: #888; font-size: 12px;">${formattedDate}</span>
+              <span style="color: #888; font-size: 11px; flex-shrink: 0; margin-left: 6px;">${formattedDate}</span>
             </div>
             
-            <p style="color: #eaeaea; font-size: 15px; line-height: 1.6; margin: 0 0 12px 0; word-break: break-word;">${p.content || ''}</p>
+            <p style="color: #eaeaea; font-size: 14px; line-height: 1.5; margin: 0 0 10px 0; word-break: break-word;">${p.content || ''}</p>
             
-            ${p.imageUrl ? `<div style="background:#000; border-radius:8px; width:100%; overflow:hidden; margin-bottom:12px;"><img src="${p.imageUrl}" style="width:100%; height:auto; display:block; border-radius:8px;" /></div>` : ''}
+            ${p.imageUrl ? `<div style="background:#000; border-radius:6px; width:100%; overflow:hidden; margin-bottom:10px;"><img src="${p.imageUrl}" style="width:100%; height:auto; display:block; border-radius:6px;" /></div>` : ''}
             
-            <div style="display: flex; gap: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 8px;">
-              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 8px; color:#ff9900; font-size:13px; font-weight:bold; padding: 8px 14px;">❤️ Suka (${formattedLikes})</button>
-              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 8px; color:#00ffcc; font-size:13px; font-weight:bold; padding: 8px 14px;">💬 Komentar (${formattedComments})</button>
+            <div style="display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 6px;">
+              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 6px; color:#ff9900; font-size:12px; font-weight:bold; padding: 6px 12px;">❤️ Suka (${formattedLikes})</button>
+              <button type="button" class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 6px; color:#00ffcc; font-size:12px; font-weight:bold; padding: 6px 12px;">💬 Komentar (${formattedComments})</button>
             </div>
           </div>
         `;
       });
-      feedBox.innerHTML = html || '<p style="color: #777; font-size: 14px; text-align: center;">Belum ada postingan.</p>';
+      feedBox.innerHTML = html || '<p style="color: #777; font-size: 13px; text-align: center;">Belum ada postingan.</p>';
     }
 
     async function submitPost() {
