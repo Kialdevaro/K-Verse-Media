@@ -295,6 +295,17 @@
     let auth = null;
     let provider = null;
 
+    const aiGalleryPool = [
+      "https://picsum.photos/seed/kverse1/600/400",
+      "https://picsum.photos/seed/kverse2/600/400",
+      "https://picsum.photos/seed/kverse3/600/400",
+      "https://picsum.photos/seed/kverse4/600/400",
+      "https://picsum.photos/seed/kverse5/600/400",
+      "https://picsum.photos/seed/kverse6/600/400",
+      "https://picsum.photos/seed/kverse7/600/400",
+      "https://picsum.photos/seed/kverse8/600/400"
+    ];
+
     function formatNum(num) {
       return new Intl.NumberFormat('id-ID').format(num || 0);
     }
@@ -325,7 +336,6 @@
       return emailMatch || idMatch;
     }
 
-    // Kompresi Gambar
     function compressAndResizeImage(file, callback, maxWidth = 350, quality = 0.4) {
       const reader = new FileReader();
       reader.onerror = function() { alert("Gagal membaca file gambar."); };
@@ -400,7 +410,7 @@
     async function initUser(firebaseUser) {
       if (!supabase) return;
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('kverse_users')
           .select('*')
           .eq('uid', firebaseUser.uid)
@@ -428,7 +438,6 @@
       }
     }
 
-    // Fungsi Render Tampilan Profil
     function renderProfile() {
       const nameEl = document.getElementById('my-name');
       const idEl = document.getElementById('my-id');
@@ -452,7 +461,6 @@
       renderMyGallery();
     }
 
-    // Render Feed / Beranda (Dilengkapi Sistem Filter Otomatis 24 Jam Terakhir)
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
@@ -465,11 +473,9 @@
         let posts = [];
         let bots = [];
 
-        // Ambil postingan asli dari user
         const postsRes = await supabase.from('kverse_posts').select('*');
         if (postsRes.data) posts = postsRes.data;
 
-        // Ambil data bot dan terapkan Filter 24 Jam Otomatis (Auto-Delete > 24 Jam)
         try {
           const botsRes = await supabase.from('kverse_bots').select('*');
           if (botsRes.data) {
@@ -477,14 +483,23 @@
             const ONE_DAY = 24 * 60 * 60 * 1000;
 
             bots = botsRes.data
-              .map(b => {
+              .map((b, idx) => {
                 const postTime = new Date(b.created_at || b.time || b.timestamp || now).getTime();
+                
+                let rawImg = b.image || b.image_url || b.photo || b.img || b.picture || b.url || b.gambar || b.media || b.file || b.image_path || b.img_url || b.link || b.src || '';
+                
+                if (!rawImg || rawImg.trim() === '') {
+                  rawImg = aiGalleryPool[idx % aiGalleryPool.length];
+                }
+
+                // Simpan original database ID di dalam objek post
                 return {
-                  id: 'bot-' + (b.id || Math.random()),
+                  id: 'bot-' + (b.id !== undefined ? b.id : idx),
+                  dbId: b.id !== undefined ? b.id : idx,
                   author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
                   author_avatar: b.avatar || b.author_avatar || b.photo_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-                  text: b.text || b.content || b.caption || b.message || '',
-                  image: b.image || b.image_url || b.photo || '',
+                  text: b.text || b.content || b.caption || b.message || b.body || '',
+                  image: rawImg,
                   likes: b.likes || [],
                   comments: b.comments || [],
                   created_at: b.created_at || new Date().toISOString(),
@@ -492,7 +507,6 @@
                   isBot: true
                 };
               })
-              // HANYA AMBIL YANG BERUSIA DI BAWAH 24 JAM (Auto-Clean Berkelanjutan)
               .filter(b => (now - b.timestamp) <= ONE_DAY);
           }
         } catch(errBot) {
@@ -569,53 +583,50 @@
       }
     }
 
-    // Render Papan Skor (Leaderboard)
     async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
-      if (!rankBox || !supabase) return;
+      if (!rankBox) return;
+
+      let users = [
+        { name: 'Kialdevaro Gaming 🤖', friendId: 'KV-683419', xp: 3500, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' },
+        { name: 'K-Verse Bot Alpha ⚡', friendId: 'KV-999001', xp: 2850, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png' },
+        { name: 'CyberExplorer 🌐', friendId: 'KV-777333', xp: 1920, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712128.png' },
+        { name: 'GameMaster ID 🎮', friendId: 'KV-555888', xp: 1400, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' }
+      ];
 
       try {
-        let users = [];
-        const { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
-        if (data) users = data;
-
-        if (users.length === 0) {
-          users = [
-            { name: 'Kialdevaro Gaming 🤖', friendId: 'KV-683419', xp: 3500, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' },
-            { name: 'K-Verse Bot Alpha ⚡', friendId: 'KV-999001', xp: 2850, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png' },
-            { name: 'CyberExplorer 🌐', friendId: 'KV-777333', xp: 1920, avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712128.png' },
-            { name: 'GameMaster ID 🎮', friendId: 'KV-555888', xp: 1400, avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png' }
-          ];
+        if (supabase) {
+          const { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
+          if (data && data.length > 0) {
+            users = data;
+          }
         }
+      } catch(e) {}
 
-        let html = '';
-        users.forEach((u, idx) => {
-          let badgeColor = '#888';
-          if(idx === 0) badgeColor = '#ffD700';
-          else if(idx === 1) badgeColor = '#C0C0C0';
-          else if(idx === 2) badgeColor = '#CD7F32';
+      let html = '';
+      users.forEach((u, idx) => {
+        let badgeColor = '#888';
+        if(idx === 0) badgeColor = '#ffD700';
+        else if(idx === 1) badgeColor = '#C0C0C0';
+        else if(idx === 2) badgeColor = '#CD7F32';
 
-          html += `
-            <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; padding: 8px 12px; width: 100%;">
-              <div style="align-items: center; display: flex; gap: 10px;">
-                <span style="color: ${badgeColor}; font-size: 13px; font-weight: bold; width: 20px; text-align: center;">#${idx+1}</span>
-                <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
-                <div>
-                  <div style="color: white; font-size: 12px; font-weight: bold;">${u.name}</div>
-                  <div style="color: #00ffcc; font-size: 10px;">ID: #${u.friendId || 'KV-000000'}</div>
-                </div>
+        html += `
+          <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 8px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; padding: 8px 12px; width: 100%;">
+            <div style="align-items: center; display: flex; gap: 10px;">
+              <span style="color: ${badgeColor}; font-size: 13px; font-weight: bold; width: 20px; text-align: center;">#${idx+1}</span>
+              <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
+              <div>
+                <div style="color: white; font-size: 12px; font-weight: bold;">${u.name}</div>
+                <div style="color: #00ffcc; font-size: 10px;">ID: #${u.friendId || 'KV-000000'}</div>
               </div>
-              <span style="color: #ff9900; font-size: 12px; font-weight: bold;">${formatNum(u.xp)} XP</span>
             </div>
-          `;
-        });
-        rankBox.innerHTML = html;
-      } catch(e) {
-        rankBox.innerHTML = '<p style="color: #ff5500; font-size: 12px; text-align: center;">Gagal memuat papan skor.</p>';
-      }
+            <span style="color: #ff9900; font-size: 12px; font-weight: bold;">${formatNum(u.xp)} XP</span>
+          </div>
+        `;
+      });
+      rankBox.innerHTML = html;
     }
 
-    // Render Galeri Profil Pengguna
     async function renderMyGallery() {
       const galleryBox = document.getElementById('my-gallery');
       if (!galleryBox || !supabase || !currentUser) {
@@ -644,7 +655,6 @@
       } catch(e) {}
     }
 
-    // Objek Utama KVerseApp
     window.KVerseApp = {
       tempBase64: null,
       activePost: null,
@@ -762,10 +772,14 @@
         }
 
         try {
+          // Tentukan tabel target & ID yang tepat (kverse_bots vs kverse_posts)
+          const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
+          const targetId = post.isBot ? post.dbId : post.id;
+
           const { error } = await supabase
-            .from('kverse_posts')
+            .from(targetTable)
             .update({ likes: JSON.stringify(likes) })
-            .eq('id', post.id);
+            .eq('id', targetId);
 
           if(error) throw error;
 
@@ -799,10 +813,14 @@
         });
 
         try {
+          // Tentukan tabel target & ID yang tepat (kverse_bots vs kverse_posts)
+          const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
+          const targetId = post.isBot ? post.dbId : post.id;
+
           const { error } = await supabase
-            .from('kverse_posts')
+            .from(targetTable)
             .update({ comments: JSON.stringify(comments) })
-            .eq('id', post.id);
+            .eq('id', targetId);
 
           if(error) throw error;
 
@@ -826,7 +844,11 @@
         if (!confirm("Yakin ingin menghapus postingan ini?")) return;
 
         try {
-          const { error } = await supabase.from('kverse_posts').delete().eq('id', window.KVerseApp.activePost.id);
+          const post = window.KVerseApp.activePost;
+          const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
+          const targetId = post.isBot ? post.dbId : post.id;
+
+          const { error } = await supabase.from(targetTable).delete().eq('id', targetId);
           if(error) throw error;
 
           window.KVerseUI.closeModal();
