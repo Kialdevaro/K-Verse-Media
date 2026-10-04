@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Jalankan Mesin Posting, XP Bot/Owner, & Pembersihan Otomatis
+      - name: Jalankan Mesin Otomatisasi & 100 Bot Leaderboard
         env:
           SUPABASE_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_posts"
           SUPABASE_USERS_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_users"
@@ -34,14 +34,38 @@ jobs:
           headers = {
               "apikey": key,
               "Authorization": f"Bearer {key}",
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "Prefer": "resolution=merge-duplicates"
           }
 
-          # 1. Auto Posting Bot
+          # 1. Masukkan / Update 100 Bot ke kverse_users menggunakan on_conflict=uid
+          bot_names = ["K-Verse Alpha", "CyberGamer ID", "PixelRunner", "NeonRider", "NovaBot", "QuantumID", "ShadowPlayer", "NexusBot", "StellarGamer", "AeroBot"]
+          for i in range(1, 101):
+              b_uid = f"bot-user-{i}"
+              b_name = f"{random.choice(bot_names)} #{i}"
+              b_fid = f"KV-{random.randint(100000, 999999)}"
+              b_avatar = f"https://picsum.photos/seed/botavatar-{i}/150/150"
+              
+              user_payload = json.dumps({
+                  "uid": b_uid,
+                  "name": b_name,
+                  "friendId": b_fid,
+                  "avatar": b_avatar,
+                  "xp": random.randint(10, 500)
+              }).encode('utf-8')
+              
+              # Tambahkan parameter on_conflict=uid agar Supabase melakukan upsert (bukan error duplicate)
+              req_u = urllib.request.Request(users_url + "?on_conflict=uid", data=user_payload, headers=headers, method="POST")
+              try:
+                  urllib.request.urlopen(req_u)
+              except Exception as e:
+                  pass
+
+          # 2. Auto Posting Bot (2 postingan)
           prefix = ["Update harian", "Eksplorasi seru", "Tips & trik", "Review santai", "Ngecek performa", "Status project", "Nostalgia gaming", "Setup web", "Eksklusif hari ini"]
           topics = ["Game PS1 emulator browser", "Layout CSS Blogger responsif", "Katalog HTML5 Playgama", "Shopee Affiliate & Buylink", "CapCut & AI Short Video", "Gran Turismo PSP setup", "Dark cinematic aesthetic", "Kialdevaro Gaming Hub"]
           suffixes = ["mantap banget! 🚀", "sukses bikin nagih 🔥", "wajib dicoba kawan 🕹️", "lest go! ✨", "keren parah 💯", "semakin produktif 📈", "auto gacor! ⚡"]
-          names = ["Kialdevaro Gaming ⚡", "K-Verse Bot Alpha 🤖", "Kialdevaro INSIGHT 🌐", "Kialdevaro Game Hub 🎮", "K-Verse Media 🎬"]
+          names = ["Kialdevaro Gaming ⚡", "K-Verse Bot Alpha 🤖", "Kialdevaro INSIGHT 🌐", "Kialdevaro Game Hub 🎮", "Kialdevaro Media 🎬"]
 
           for _ in range(2):
               text = f"{random.choice(prefix)} {random.choice(topics)}, {random.choice(suffixes)}"
@@ -66,7 +90,7 @@ jobs:
               except Exception as e:
                   print("Post error:", e)
 
-          # 2. Tambah 1 - 5 XP acak untuk Owner (KV-230901) dan Bot setiap 1 jam
+          # 3. Tambah 1 - 5 XP acak untuk Owner (KV-230901) dan semua Bot setiap 1 jam
           try:
               req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp,email", headers=headers)
               with urllib.request.urlopen(req_users) as resp:
@@ -84,13 +108,12 @@ jobs:
           except Exception as e:
               print("XP update error:", e)
 
-          # 3. Hapus Postingan Bot Berusia Lebih dari 24 Jam
+          # 4. Hapus Postingan Bot Berusia Lebih dari 24 Jam
           yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-          del_url = f"{url}?author_uid=eq.bot-system-hyper&created_at=lt.$YESTERDAY"
+          del_url = f"{url}?author_uid=eq.bot-system-hyper&created_at=lt.{yesterday}"
           del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
           try:
               urllib.request.urlopen(del_req)
           except Exception as e:
               print("Delete error:", e)
           EOF
-          
