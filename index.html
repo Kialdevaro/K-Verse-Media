@@ -524,8 +524,7 @@
         alert("Gagal memposting.");
       }
     }
-
-    async function openDetail(id) {
+          async function openDetail(id) {
       try {
         activePost = cachedPosts.find(p => p.id == id);
         if(!activePost) return;
@@ -552,4 +551,80 @@
         const comments = safeParseArray(activePost.comments);
         let cHtml = '';
         if(comments.length === 0) cHtml = '<span style="color: #777;">Belum ada komentar.</span>';
-        else comments.forEach(c => cHtml += `<div style="bor
+        else comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> ${c.text}</div>`);
+        document.getElementById('modal-comments-box').innerHTML = cHtml;
+
+        document.getElementById('detail-modal').style.display = 'flex';
+      } catch(err) {
+        console.error("Open detail error:", err);
+      }
+      }
+          async function pressLike() {
+      if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
+      try {
+        let likes = safeParseArray(activePost.likes);
+        const idx = likes.indexOf(currentUser.uid);
+        if(idx > -1) likes.splice(idx, 1);
+        else likes.push(currentUser.uid);
+
+        if(!activePost.is_ad) {
+          await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
+        }
+        activePost.likes = JSON.stringify(likes);
+        document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
+        renderFeed();
+      } catch(err) {
+        console.error("Like error:", err);
+      }
+    }
+
+    async function submitComment() {
+      if(!currentUser || !activePost) { alert("Login dulu untuk berkomentar!"); return; }
+      const input = document.getElementById('modal-comment-input');
+      const text = input ? input.value.trim() : '';
+      if(!text) return;
+
+      try {
+        let comments = safeParseArray(activePost.comments);
+        comments.push({ name: currentUser.name, text: text });
+        if(!activePost.is_ad) {
+          await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
+        }
+        activePost.comments = JSON.stringify(comments);
+        if(input) input.value = '';
+
+        let cHtml = '';
+        comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> ${c.text}</div>`);
+        document.getElementById('modal-comments-box').innerHTML = cHtml;
+        renderFeed();
+      } catch(err) {
+        console.error("Comment error:", err);
+      }
+      }
+          async function pressDelete() {
+      if(!activePost || activePost.is_ad || !confirm("Hapus postingan ini?")) return;
+      try {
+        await supabase.from('kverse_posts').delete().eq('id', activePost.id);
+        KVerseUI.closeModal();
+        renderFeed();
+        renderMyGallery();
+      } catch(err) {
+        console.error("Delete error:", err);
+      }
+    }
+
+    async function toggleAuth() {
+      try {
+        if(currentUser) {
+          if(confirm("Keluar akun?")) { await signOut(auth); currentUser = null; renderProfile(); renderLeaderboard(); }
+        } else {
+          await signInWithPopup(auth, provider);
+        }
+      } catch(e) {
+        console.error("Auth error:", e);
+        alert("Gagal melakukan autentikasi.");
+      }
+    }
+  </script>
+</body>
+</html>
