@@ -113,6 +113,12 @@
         <button id="auth-btn" class="action-btn" style="background: white; border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 7px 12px; flex-shrink: 0; margin-left: 8px;">Login</button>
       </div>
 
+      <!-- Tombol Pintasan Login Aman -->
+      <div style="background: rgba(0,255,204,0.1); border: 1px dashed #00ffcc; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 12px;">
+        <span style="color: #00ffcc; font-size: 11px; display: block; margin-bottom: 6px;">Ingin Login Google dengan Sangat Mudah?</span>
+        <a href="https://kialdevaro.github.io/K-Verse-Media/" target="_blank" style="display: inline-block; background: #00ffcc; color: black; font-size: 11px; font-weight: bold; padding: 6px 14px; border-radius: 4px; text-decoration: none;">Buka Aplikasi Full Layar untuk Login</a>
+      </div>
+
       <span id="avatar-upload-status" style="color: #ff9900; display: none; font-size: 11px; margin-bottom: 6px; text-align: center; width: 100%;">Menyimpan foto profil baru...</span>
       <h4 style="color: #ffc107; font-size: 13px; margin: 0px 0px 8px; width: 100%;">Galeri Postingan Anda (Maks. 50 Foto)</h4>
       <div id="my-gallery" style="display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); width: 100%; padding-bottom: 20px;"></div>
@@ -409,7 +415,11 @@
         try {
           const res = await signInWithPopup(auth, provider);
           await initUser(res.user);
-        } catch(e) { alert("Login gagal: " + e.message); }
+        } catch(e) {
+          if(confirm("Login Google diblokir oleh keamanan browser di dalam tampilan blog.\n\nBuka aplikasi K-Verse di tab baru agar bisa login dengan lancar?")) {
+            window.open("https://kialdevaro.github.io/K-Verse-Media/", "_blank");
+          }
+        }
       } else {
         try { await signOut(auth); } catch(e) {}
         currentUser = null;
@@ -764,7 +774,6 @@
       try {
         const bots = await getCloudBots();
         if(Array.isArray(bots)) {
-          // Buat komentar dinamis acak per bot post jika belum ada atau statis
           bots.forEach(b => {
             let parsedComms = safeParseArray(b.comments);
             if(parsedComms.length === 0 || parsedComms.every(c => c.text.includes("9921") || c.text.includes("12345"))) {
@@ -850,7 +859,6 @@
           </div>
         `;
 
-        // Sisipkan Kialdevaro ADS setiap 15 postingan sekali
         if ((idx + 1) % 15 === 0) {
           html += `
             <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgba(255,153,0,0.4); padding: 12px; width: 100%;">
