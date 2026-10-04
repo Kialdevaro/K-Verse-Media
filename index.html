@@ -115,7 +115,7 @@
 
       <!-- Tombol Pintasan Login Aman -->
       <div style="background: rgba(0,255,204,0.1); border: 1px dashed #00ffcc; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 12px;">
-        <span style="color: #00ffcc; font-size: 11px; display: block; margin-bottom: 6px;">Ingin Login Google dengan Sangat Mudah?</span>
+        <span style="color: #00ffcc; font-size: 11px; display: block; margin-bottom: 6px;">Kendala Login Google di dalam Blog?</span>
         <a href="https://kialdevaro.github.io/K-Verse-Media/" target="_blank" style="display: inline-block; background: #00ffcc; color: black; font-size: 11px; font-weight: bold; padding: 6px 14px; border-radius: 4px; text-decoration: none;">Buka Aplikasi Full Layar untuk Login</a>
       </div>
 
@@ -411,14 +411,21 @@
         alert("Autentikasi belum siap.");
         return;
       }
+
+      // Deteksi jika dibuka di dalam iframe blog, arahkan otomatis ke tab baru agar login Google sukses
+      if (window.self !== window.top) {
+        if(confirm("Demi keamanan browser & Google, login harus dilakukan di halaman utama K-Verse.\n\nBuka halaman login sekarang?")) {
+          window.open("https://kialdevaro.github.io/K-Verse-Media/", "_blank");
+        }
+        return;
+      }
+
       if(!currentUser) {
         try {
           const res = await signInWithPopup(auth, provider);
           await initUser(res.user);
         } catch(e) {
-          if(confirm("Login Google diblokir oleh keamanan browser di dalam tampilan blog.\n\nBuka aplikasi K-Verse di tab baru agar bisa login dengan lancar?")) {
-            window.open("https://kialdevaro.github.io/K-Verse-Media/", "_blank");
-          }
+          alert("Login gagal: " + e.message);
         }
       } else {
         try { await signOut(auth); } catch(e) {}
