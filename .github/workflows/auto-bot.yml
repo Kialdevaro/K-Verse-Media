@@ -38,13 +38,11 @@ jobs:
               "Prefer": "resolution=merge-duplicates"
           }
 
-          # Karakter dan Nama Manusia yang Bervariasi
           first_names = ["Rizky", "Ahmad", "Dimas", "Putri", "Siti", "Reza", "Fajar", "Dewi", "Surya", "Bayu", "Gilang", "Intan", "Yoga", "Sinta", "Agung", "Maya", "Dandi", "Nisa", "Bima", "Lestari", "Andi", "Mega", "Fauzi", "Rian", "Taufik", "Dwi", "Eko", "Wahyudi", "Naufal", "Zaki"]
           last_names = ["Pratama", "Saputra", "Wijaya", "Santoso", "Ramadhan", "Hidayat", "Nugroho", "Kusuma", "Utama", "Siregar", "Maulana", "Setiawan", "Puspita", "Wahyudi", "Kurniawan", "Permana", "Hakim", "Fadillah", "Gunawan", "Susanto"]
           
           archetypes = ["Tech & AI", "Lifestyle", "Gamer", "Motivator", "Casual"]
 
-          # 1. Inisialisasi 100 Bot dengan Karakter Unik
           bots_cache = []
           for i in range(1, 101):
               b_uid = f"bot-user-{i}"
@@ -70,14 +68,12 @@ jobs:
                   "xp": random.randint(10, 1200)
               }).encode('utf-8')
               
-                            req_u = urllib.request.Request(users_url + "?on_conflict=uid", data=user_payload, headers=headers, method="POST")
+              req_u = urllib.request.Request(users_url + "?on_conflict=uid", data=user_payload, headers=headers, method="POST")
               try:
                   urllib.request.urlopen(req_u)
               except Exception as e:
                   print("DEBUG ERROR USER:", e)
-                
-          
-          # 2. Bank Topik Berdasarkan Karakter (Sangat Luas ala Media Sosial)
+
           content_pools = {
               "Tech & AI": [
                   "Lagi nyobain tools AI terbaru untuk automasi workflow, hasilnya bener-bener di luar nalar! 🤖✨",
@@ -111,14 +107,12 @@ jobs:
               ]
           }
 
-          # 3. Buat 1 sampai 2 Postingan Sesuai Karakter Bot Terpilih
           post_count = random.randint(1, 2)
           for _ in range(post_count):
               chosen_bot = random.choice(bots_cache)
               pool = content_pools.get(chosen_bot["archetype"], content_pools["Casual"])
               text = random.choice(pool)
               
-              # 500rb Kombinasi Gambar Random
               img_id = random.randint(1, 500000)
               image = f"https://picsum.photos/seed/kverse-img-{img_id}/600/400"
 
@@ -138,7 +132,6 @@ jobs:
               except Exception as e:
                   print("Post error:", e)
 
-          # 4. Simulasi Like & Komentar Berkala yang Sesuai Konteks
           try:
               req_get_posts = urllib.request.Request(url + "?select=id,likes,comments&order=created_at.desc&limit=20", headers=headers)
               with urllib.request.urlopen(req_get_posts) as resp:
@@ -190,7 +183,6 @@ jobs:
           except Exception as e:
               print("Interaction error:", e)
 
-          # 5. Tambah 1 - 5 XP acak untuk Owner & Bot
           try:
               req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp,email", headers=headers)
               with urllib.request.urlopen(req_users) as resp:
@@ -208,7 +200,6 @@ jobs:
           except Exception as e:
               print("XP update error:", e)
 
-          # 6. Hapus Postingan Bot Berusia Lebih dari 24 Jam
           yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
           del_url = f"{url}?author_uid=like.bot-user-*&created_at=lt.{yesterday}"
           del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
