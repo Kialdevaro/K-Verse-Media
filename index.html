@@ -452,7 +452,7 @@
       renderMyGallery();
     }
 
-    // Render Feed / Beranda (Dilengkapi Auto-Detect Kolom Bot Apapun)
+    // Render Feed / Beranda (Dilengkapi Sistem Filter Otomatis 24 Jam Terakhir)
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
@@ -465,33 +465,40 @@
         let posts = [];
         let bots = [];
 
+        // Ambil postingan asli dari user
         const postsRes = await supabase.from('kverse_posts').select('*');
         if (postsRes.data) posts = postsRes.data;
 
+        // Ambil data bot dan terapkan Filter 24 Jam Otomatis (Auto-Delete > 24 Jam)
         try {
           const botsRes = await supabase.from('kverse_bots').select('*');
           if (botsRes.data) {
-            bots = botsRes.data.map(b => ({
-              id: 'bot-' + (b.id || Math.random()),
-              // Deteksi otomatis berbagai nama kolom nama/nickname/author
-              author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
-              // Deteksi otomatis berbagai nama kolom avatar/foto profil
-              author_avatar: b.avatar || b.author_avatar || b.photo_profile || b.image_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-              // Deteksi otomatis berbagai nama kolom teks/konten/caption
-              text: b.text || b.content || b.caption || b.message || b.body || '',
-              // Deteksi otomatis berbagai nama kolom gambar AI/foto
-              image: b.image || b.image_url || b.photo || b.img || b.picture || '',
-              likes: b.likes || [],
-              comments: b.comments || [],
-              created_at: b.created_at || b.time || b.timestamp || new Date().toISOString(),
-              isBot: true
-            }));
+            const now = Date.now();
+            const ONE_DAY = 24 * 60 * 60 * 1000;
+
+            bots = botsRes.data
+              .map(b => {
+                const postTime = new Date(b.created_at || b.time || b.timestamp || now).getTime();
+                return {
+                  id: 'bot-' + (b.id || Math.random()),
+                  author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
+                  author_avatar: b.avatar || b.author_avatar || b.photo_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+                  text: b.text || b.content || b.caption || b.message || '',
+                  image: b.image || b.image_url || b.photo || '',
+                  likes: b.likes || [],
+                  comments: b.comments || [],
+                  created_at: b.created_at || new Date().toISOString(),
+                  timestamp: postTime,
+                  isBot: true
+                };
+              })
+              // HANYA AMBIL YANG BERUSIA DI BAWAH 24 JAM (Auto-Clean Berkelanjutan)
+              .filter(b => (now - b.timestamp) <= ONE_DAY);
           }
         } catch(errBot) {
-          console.warn("Tabel kverse_bots belum aktif/kosong");
+          console.warn("Tabel kverse_bots kosong atau belum diisi");
         }
 
-        // Gabungkan bot posts dan user posts
         cachedPosts = [...bots, ...posts];
 
         if (cachedPosts.length === 0) {
