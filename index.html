@@ -50,7 +50,7 @@
   <!-- WIDGET UTAMA K-VERSE FULL LAYAR -->
   <div id="kialdevaro-community-hub">
     
-    <!--HEADER-->
+    <!--HEADER (TIDAK DIUBAH)-->
     <div style="align-items: center; border-bottom: 1px solid rgb(34, 34, 34); display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; width: 100%;">
       <div>
         <h3 style="color: #00ffcc; font-size: 16px; font-weight: 700; margin: 0px 0px 2px;">🌐 K-Verse Media</h3>
@@ -67,7 +67,7 @@
     </div>
 
     <!--1. TAB BERANDA-->
-    <div id="view-feed" class="tab-view" style="display: flex;">
+    <div id="view-feed" class="tab-view" style="display: none;">
       <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 12px; padding: 12px; width: 100%;">
         <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 13px; height: 70px; margin-bottom: 8px; outline: none; padding: 8px; resize: none; width: 100%;"></textarea>
         
@@ -113,12 +113,6 @@
         <button id="auth-btn" class="action-btn" style="background: white; border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 7px 12px; flex-shrink: 0; margin-left: 8px;">Login</button>
       </div>
 
-      <!-- Tombol Pintasan Login Aman -->
-      <div style="background: rgba(0,255,204,0.1); border: 1px dashed #00ffcc; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 12px;">
-        <span style="color: #00ffcc; font-size: 11px; display: block; margin-bottom: 6px;">Kendala Login Google di dalam Blog?</span>
-        <a href="https://kialdevaro.github.io/K-Verse-Media/" target="_blank" style="display: inline-block; background: #00ffcc; color: black; font-size: 11px; font-weight: bold; padding: 6px 14px; border-radius: 4px; text-decoration: none;">Buka Aplikasi Full Layar untuk Login</a>
-      </div>
-
       <span id="avatar-upload-status" style="color: #ff9900; display: none; font-size: 11px; margin-bottom: 6px; text-align: center; width: 100%;">Menyimpan foto profil baru...</span>
       <h4 style="color: #ffc107; font-size: 13px; margin: 0px 0px 8px; width: 100%;">Galeri Postingan Anda (Maks. 50 Foto)</h4>
       <div id="my-gallery" style="display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); width: 100%; padding-bottom: 20px;"></div>
@@ -160,6 +154,8 @@
           const el = document.getElementById('view-' + t);
           if(el) el.style.display = (t === tab) ? 'flex' : 'none';
         });
+        localStorage.setItem('kverse_active_tab', tab);
+        
         if(tab === 'feed' && typeof window.KVerseApp === 'object' && window.KVerseApp.renderFeed) window.KVerseApp.renderFeed();
         if(tab === 'rank' && typeof window.KVerseApp === 'object' && window.KVerseApp.renderLeaderboard) window.KVerseApp.renderLeaderboard();
         if(tab === 'profile' && typeof window.KVerseApp === 'object' && window.KVerseApp.renderProfile) window.KVerseApp.renderProfile();
@@ -241,6 +237,9 @@
     });
 
     document.addEventListener('DOMContentLoaded', function() {
+      const savedTab = localStorage.getItem('kverse_active_tab') || 'profile';
+      window.KVerseUI.switchTab(savedTab);
+
       const postFileInput = document.getElementById('post-file');
       if (postFileInput) {
         postFileInput.addEventListener('change', function(e) {
@@ -285,19 +284,6 @@
     let auth = null;
     let provider = null;
 
-    const OWNER_EMAIL = "akunwildrift2020@gmail.com";
-    const OWNER_FRIEND_ID = "KV-683419";
-
-    const commentPool = [
-      "Keren banget dokumentasinya bro!",
-      "Mantap jiwa nih, ditunggu update selanjutnya!",
-      "Gokil abis, sukses terus buat K-Verse!",
-      "Inspiratif banget pembahasannya ✨",
-      "Top markotop! Keren abis dokumentasinya 👍",
-      "Mantap pol, menginspirasi sekali!",
-      "Keren parah dokumentasinya bro 🔥"
-    ];
-
     function formatNum(num) {
       return new Intl.NumberFormat('id-ID').format(num || 0);
     }
@@ -321,6 +307,8 @@
 
     function isUserOwner(user) {
       if (!user) return false;
+      const OWNER_EMAIL = "akunwildrift2020@gmail.com";
+      const OWNER_FRIEND_ID = "KV-683419";
       const emailMatch = user.email && user.email.toLowerCase().trim() === OWNER_EMAIL;
       const idMatch = user.friendId && user.friendId.trim() === OWNER_FRIEND_ID;
       return emailMatch || idMatch;
@@ -558,7 +546,7 @@
       } catch(e) {}
     }
 
-    // Objek Utama KVerseApp untuk Interaksi & Tombol Togel
+    // Objek Utama KVerseApp
     window.KVerseApp = {
       tempBase64: null,
       activePost: null,
@@ -636,17 +624,14 @@
         }
 
         const likes = safeParseArray(found.likes);
-        const hasLiked = currentUser ? likes.includes(currentUser.uid) : false;
         if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
 
-        // Tampilkan tombol hapus jika pemilik post
         if(currentUser && (currentUser.uid === found.author_uid || isUserOwner(currentUser))) {
           if(delBtn) delBtn.style.display = 'block';
         } else {
           if(delBtn) delBtn.style.display = 'none';
         }
 
-        // Render Komentar
         const comments = safeParseArray(found.comments);
         let cHtml = '';
         if(comments.length === 0) {
@@ -673,9 +658,9 @@
         const idx = likes.indexOf(currentUser.uid);
 
         if (idx > -1) {
-          likes.splice(idx, 1); // Batalkan like (dislike / toggle off)
+          likes.splice(idx, 1);
         } else {
-          likes.push(currentUser.uid); // Tambah like (toggle on)
+          likes.push(currentUser.uid);
         }
 
         try {
@@ -726,7 +711,6 @@
           post.comments = JSON.stringify(comments);
           if(input) input.value = '';
 
-          // Render ulang kotak komentar di modal
           const commentsBox = document.getElementById('modal-comments-box');
           let cHtml = '';
           comments.forEach(c => {
@@ -763,22 +747,18 @@
         }
 
         if (currentUser) {
-          if (confirm("Ingkeluar akun?")) {
+          if (confirm("Ingin keluar akun?")) {
             await signOut(auth);
             currentUser = null;
             renderProfile();
           }
         } else {
           try {
-            // Deteksi apakah dibuka di dalam iframe Blogger
-            const isInIframe = window.self !== window.top;
-            if (isInIframe) {
-              alert("Demi keamanan browser, login Google di dalam Iframe blog mungkin dibatasi. Silakan klik tombol 'Buka Aplikasi Full Layar untuk Login' di bawah profil!");
-            }
+            localStorage.setItem('kverse_active_tab', 'profile');
             await signInWithPopup(auth, provider);
           } catch(err) {
             console.error("Auth Popup Error:", err);
-            alert("Gagal login dengan Popup. Silakan gunakan tombol 'Buka Aplikasi Full Layar untuk Login' di bawah tab Profil.");
+            alert("Gagal login dengan Popup. Pastikan domain GitHub Pages kamu sudah terdaftar di Authorized Domains Firebase Console.");
           }
         }
       },
