@@ -2,7 +2,6 @@ name: K-Verse Hyper Automation 24/7
 
 on:
   schedule:
-    # Berjalan otomatis setiap 5 menit secara nonstop
     - cron: '*/5 * * * *'
   workflow_dispatch:
 
@@ -10,52 +9,86 @@ jobs:
   hyper-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Jalankan Mesin Posting & Pembersihan Otomatis
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Jalankan Mesin Posting, XP Bot/Owner, & Pembersihan Otomatis
+        env:
+          SUPABASE_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_posts"
+          SUPABASE_USERS_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_users"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dW50dXVoeGNldHFhZmFhemFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NDk2NzgsImV4cCI6MjEwNjUyNTY3OH0.0GKmzbPNYzWEHzuPhAIx-zmGZA6Sf2Y-jEQsD1hH5Kc"
         run: |
-          SUPABASE_URL="https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_posts"
-          SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dW50dXVoeGNldHFhZmFhemFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NDk2NzgsImV4cCI6MjEwNjUyNTY3OH0.0GKmzbPNYzWEHzuPhAIx-zmGZA6Sf2Y-jEQsD1hH5Kc"
+          python3 - << 'EOF'
+          import urllib.request
+          import json
+          import random
+          import os
+          from datetime import datetime, timezone, timedelta
 
-          # Loop untuk membuat postingan otomatis
-          for i in {1..2}
-          do
-            # 1. Generator Algoritmik Kombinasi Kalimat Relevan Kialdevaro
-            PREFIXES=("Update harian" "Eksplorasi seru" "Tips & trik" "Review santai" "Ngecek performa" "Status project" "Nostalgia gaming" "Setup web" "Eksklusif hari ini")
-            TOPICS=("Game PS1 emulator browser" "Layout CSS Blogger responsif" "Katalog HTML5 Playgama" "Shopee Affiliate & Buylink" "CapCut & AI Short Video" "Gran Turismo PSP setup" "Dark cinematic aesthetic" "Kialdevaro Gaming Hub")
-            SUFFIXES=("mantap banget! 🚀" "sukses bikin nagih 🔥" "wajib dicoba kawan 🕹️" "lest go! ✨" "keren parah 💯" "semakin produktif 📈" "auto gacor! ⚡")
+          url = os.environ["SUPABASE_URL"]
+          users_url = os.environ["SUPABASE_USERS_URL"]
+          key = os.environ["SUPABASE_KEY"]
 
-            P_IDX=$((RANDOM % ${#PREFIXES[@]}))
-            T_IDX=$((RANDOM % ${#TOPICS[@]}))
-            S_IDX=$((RANDOM % ${#SUFFIXES[@]}))
+          headers = {
+              "apikey": key,
+              "Authorization": f"Bearer {key}",
+              "Content-Type": "application/json"
+          }
 
-            TEXT="${PREFIXES[$P_IDX]} ${TOPICS[$T_IDX]}, ${SUFFIXES[$S_IDX]}"
+          # 1. Auto Posting Bot (2 postingan per siklus)
+          prefix = ["Update harian", "Eksplorasi seru", "Tips & trik", "Review santai", "Ngecek performa", "Status project", "Nostalgia gaming", "Setup web", "Eksklusif hari ini"]
+          topics = ["Game PS1 emulator browser", "Layout CSS Blogger responsif", "Katalog HTML5 Playgama", "Shopee Affiliate & Buylink", "CapCut & AI Short Video", "Gran Turismo PSP setup", "Dark cinematic aesthetic", "Kialdevaro Gaming Hub"]
+          suffixes = ["mantap banget! 🚀", "sukses bikin nagih 🔥", "wajib dicoba kawan 🕹️", "lest go! ✨", "keren parah 💯", "semakin produktif 📈", "auto gacor! ⚡"]
 
-            # 2. Generator Gambar Berbeda secara Bergantian (Seed Random 1 - 500000)
-            IMG_ID=$(( (RANDOM * 32767 + RANDOM) % 500000 + 1 ))
-            IMAGE="https://picsum.photos/seed/kverse-$IMG_ID/600/400"
+          names = ["Kialdevaro Gaming ⚡", "K-Verse Bot Alpha 🤖", "Kialdevaro INSIGHT 🌐", "Kialdevaro Game Hub 🎮", "K-Verse Media 🎬"]
 
-            NAMES=("Kialdevaro Gaming ⚡" "K-Verse Bot Alpha 🤖" "Kialdevaro INSIGHT 🌐" "Kialdevaro Game Hub 🎮" "K-Verse Media 🎬")
-            AVATARS=(
-              "https://picsum.photos/seed/avatar1-$IMG_ID/150/150"
-              "https://picsum.photos/seed/avatar2-$IMG_ID/150/150"
-              "https://picsum.photos/seed/avatar3-$IMG_ID/150/150"
-            )
-            N_IDX=$((RANDOM % ${#NAMES[@]}))
-            A_IDX=$((RANDOM % ${#AVATARS[@]}))
+          for _ in range(2):
+              text = f"{random.choice(prefix)} {random.choice(topics)}, {random.choice(suffixes)}"
+              img_id = random.randint(1, 500000)
+              image = f"https://picsum.photos/seed/kverse-{img_id}/600/400"
+              name = random.choice(names)
+              avatar = f"https://picsum.photos/seed/avatar-{img_id}/150/150"
 
-            # Kirim Postingan Baru ke kverse_posts
-            curl -s -X POST "$SUPABASE_URL" \
-            -H "apikey: $SUPABASE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_KEY" \
-            -H "Content-Type: application/json" \
-            -H "Prefer: return=minimal" \
-            -d "{\"author_uid\": \"bot-system-hyper\", \"author_name\": \"${NAMES[$N_IDX]}\", \"author_avatar\": \"${AVATARS[$A_IDX]}\", \"text\": \"$TEXT\", \"image\": \"$IMAGE\", \"likes\": \"[]\", \"comments\": \"[]\"}"
+              post_data = json.dumps({
+                  "author_uid": "bot-system-hyper",
+                  "author_name": name,
+                  "author_avatar": avatar,
+                  "text": text,
+                  "image": image,
+                  "likes": "[]",
+                  "comments": "[]"
+              }).encode('utf-8')
 
-            # Jeda waktu 30 detik
-            sleep 30
-          done
+              req = urllib.request.Request(url, data=post_data, headers=headers, method="POST")
+              try:
+                  urllib.request.urlopen(req)
+              except Exception as e:
+                  print("Post error:", e)
 
-          # 3. Hapus Otomatis Postingan Bot yang Berusia Lebih dari 24 Jam
-          YESTERDAY=$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%S.000Z')
-          curl -s -X DELETE "$SUPABASE_URL?author_uid=eq.bot-system-hyper&created_at=lt.$YESTERDAY" \
-          -H "apikey: $SUPABASE_KEY" \
-          -H "Authorization: Bearer $SUPABASE_KEY"
+          # 2. Tambah 1 - 5 XP acak untuk Owner (KV-683419) dan Bot setiap 1 jam
+          try:
+              req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp", headers=headers)
+              with urllib.request.urlopen(req_users) as resp:
+                  users = json.loads(resp.read().decode())
+                  for u in users:
+                      if u.get('friendId') == 'KV-683419' or 'bot' in str(u.get('uid', '')) or 'bot-system' in str(u.get('uid', '')):
+                          inc = random.randint(1, 5)
+                          new_xp = (u.get('xp') or 100) + inc
+                          patch_url = f"{users_url}?uid=eq.{u['uid']}"
+                          patch_data = json.dumps({"xp": new_xp}).encode('utf-8')
+                          patch_req = urllib.request.Request(patch_url, data=patch_data, headers=headers, method='PATCH')
+                          urllib.request.urlopen(patch_req)
+          except Exception as e:
+              print("XP update error:", e)
+
+          # 3. Hapus Postingan Bot Berusia Lebih dari 24 Jam
+          yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+          del_url = f"{url}?author_uid=eq.bot-system-hyper&created_at=lt.{yesterday}"
+          del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
+          try:
+              urllib.request.urlopen(del_req)
+          except Exception as e:
+              print("Delete error:", e)
+          EOF
