@@ -306,6 +306,17 @@
       "https://picsum.photos/seed/kverse8/600/400"
     ];
 
+    // Generator Angka Acak Stabil Berdasarkan ID Bot (Agar tidak berubah saat refresh tapi tetap random)
+    function getPseudoRandom(seedStr, min, max) {
+      let hash = 0;
+      const str = String(seedStr || 'kverse');
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const rnd = Math.abs(hash) % (max - min + 1);
+      return min + rnd;
+    }
+
     function formatNum(num) {
       return new Intl.NumberFormat('id-ID').format(num || 0);
     }
@@ -487,21 +498,45 @@
                 const postTime = new Date(b.created_at || b.time || b.timestamp || now).getTime();
                 
                 let rawImg = b.image || b.image_url || b.photo || b.img || b.picture || b.url || b.gambar || b.media || b.file || b.image_path || b.img_url || b.link || b.src || '';
-                
                 if (!rawImg || rawImg.trim() === '') {
                   rawImg = aiGalleryPool[idx % aiGalleryPool.length];
                 }
 
-                // Simpan original database ID di dalam objek post
+                const uniqueId = b.id !== undefined ? b.id : idx;
+
+                // SMART RANDOM LIKES & COMMENTS (Jika di database kosong, buat otomatis dan natural)
+                let rawLikes = safeParseArray(b.likes);
+                if (rawLikes.length === 0) {
+                  const fakeLikeCount = getPseudoRandom(uniqueId + 'like', 4, 35);
+                  rawLikes = Array.from({length: fakeLikeCount}, (_, i) => 'bot-like-' + i);
+                }
+
+                let rawComments = safeParseArray(b.comments);
+                if (rawComments.length === 0) {
+                  const fakeCommentCount = getPseudoRandom(uniqueId + 'comm', 1, 6);
+                  const sampleComments = [
+                    { name: "CyberGamer", text: "Mantap infonya bro! 🔥" },
+                    { name: "Kialdevaro Fan", text: "Keren banget nih projectnya 👏" },
+                    { name: "PlayerX", text: "Ikut menyimak abangku ✨" },
+                    { name: "RiderNight", text: "Gokil, lanjut terus updatenya!" },
+                    { name: "Zenix", text: "Setuju banget sama postingan ini!" },
+                    { name: "GameHunter", text: "Wah asik nih, langsung meluncur ke TKP!" }
+                  ];
+                  rawComments = [];
+                  for(let c=0; c<fakeCommentCount; c++) {
+                    rawComments.push(sampleComments[(uniqueId + c) % sampleComments.length]);
+                  }
+                }
+
                 return {
-                  id: 'bot-' + (b.id !== undefined ? b.id : idx),
-                  dbId: b.id !== undefined ? b.id : idx,
+                  id: 'bot-' + uniqueId,
+                  dbId: uniqueId,
                   author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
                   author_avatar: b.avatar || b.author_avatar || b.photo_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
                   text: b.text || b.content || b.caption || b.message || b.body || '',
                   image: rawImg,
-                  likes: b.likes || [],
-                  comments: b.comments || [],
+                  likes: rawLikes,
+                  comments: rawComments,
                   created_at: b.created_at || new Date().toISOString(),
                   timestamp: postTime,
                   isBot: true
@@ -732,7 +767,7 @@
         }
 
         const likes = safeParseArray(found.likes);
-        if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
+        if(likeBtn) likeBtn.innerHTML = `❤️️ Suka (${likes.length})`;
 
         if(currentUser && (currentUser.uid === found.author_uid || isUserOwner(currentUser))) {
           if(delBtn) delBtn.style.display = 'block';
@@ -772,7 +807,6 @@
         }
 
         try {
-          // Tentukan tabel target & ID yang tepat (kverse_bots vs kverse_posts)
           const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
           const targetId = post.isBot ? post.dbId : post.id;
 
@@ -813,7 +847,6 @@
         });
 
         try {
-          // Tentukan tabel target & ID yang tepat (kverse_bots vs kverse_posts)
           const targetTable = post.isBot ? 'kverse_bots' : 'kverse_posts';
           const targetId = post.isBot ? post.dbId : post.id;
 
