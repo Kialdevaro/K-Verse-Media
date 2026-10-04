@@ -75,21 +75,22 @@ jobs:
                       is_owner = u.get('friendId') == 'KV-230901' or (u.get('email') and u.get('email').lower().strip() == 'akunwildrift2020@gmail.com')
                       is_bot = 'bot' in str(u.get('uid', ''))
                       if is_owner or is_bot:
-                          inc = random.randint(1, 5)
-                          new_xp = (u.get('xp') or 100) + inc
-                          patch_url = f"{users_url}?uid=eq.{u['uid']}"
-                          patch_data = json.dumps({"xp": new_xp}).encode('utf-8')
-                          patch_req = urllib.request.Request(patch_url, data=patch_data, headers=headers, method='PATCH')
-                          urllib.request.urlopen(patch_req)
+                        inc = random.randint(1, 5)
+                        new_xp = (u.get('xp') or 0) + inc
+                        patch_url = f"{users_url}?uid=eq.{u['uid']}"
+                        patch_data = json.dumps({"xp": new_xp}).encode('utf-8')
+                        patch_req = urllib.request.Request(patch_url, data=patch_data, headers=headers, method='PATCH')
+                        urllib.request.urlopen(patch_req)
           except Exception as e:
               print("XP update error:", e)
 
           # 3. Hapus Postingan Bot Berusia Lebih dari 24 Jam
           yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-          del_url = f"{url}?author_uid=eq.bot-system-hyper&created_at=lt.{yesterday}"
+          del_url = f"{url}?author_uid=eq.bot-system-hyper&created_at=lt.$YESTERDAY"
           del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
           try:
               urllib.request.urlopen(del_req)
           except Exception as e:
               print("Delete error:", e)
           EOF
+          
