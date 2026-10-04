@@ -306,7 +306,6 @@
       "https://picsum.photos/seed/kverse8/600/400"
     ];
 
-    // Generator Angka Acak Stabil Berdasarkan ID Bot (Agar tidak berubah saat refresh tapi tetap random)
     function getPseudoRandom(seedStr, min, max) {
       let hash = 0;
       const str = String(seedStr || 'kverse');
@@ -472,150 +471,159 @@
       renderMyGallery();
     }
 
+    // Render Feed dengan Sistem Fallback Anti-Kosong
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
-      if (!supabase) {
-        feedBox.innerHTML = '<p style="color: #ff5500; font-size: 13px; padding: 20px; text-align: center;">Supabase belum terinisialisasi.</p>';
-        return;
-      }
+
+      let posts = [];
+      let bots = [];
 
       try {
-        let posts = [];
-        let bots = [];
+        if (supabase) {
+          const postsRes = await supabase.from('kverse_posts').select('*');
+          if (postsRes.data) posts = postsRes.data;
 
-        const postsRes = await supabase.from('kverse_posts').select('*');
-        if (postsRes.data) posts = postsRes.data;
-
-        try {
           const botsRes = await supabase.from('kverse_bots').select('*');
-          if (botsRes.data) {
-            const now = Date.now();
-            const ONE_DAY = 24 * 60 * 60 * 1000;
+          if (botsRes.data && botsRes.data.length > 0) {
+            bots = botsRes.data.map((b, idx) => {
+              let rawImg = b.image || b.image_url || b.photo || b.img || b.picture || b.url || b.gambar || b.media || b.file || '';
+              if (!rawImg || rawImg.trim() === '') {
+                rawImg = aiGalleryPool[idx % aiGalleryPool.length];
+              }
 
-            bots = botsRes.data
-              .map((b, idx) => {
-                const postTime = new Date(b.created_at || b.time || b.timestamp || now).getTime();
-                
-                let rawImg = b.image || b.image_url || b.photo || b.img || b.picture || b.url || b.gambar || b.media || b.file || b.image_path || b.img_url || b.link || b.src || '';
-                if (!rawImg || rawImg.trim() === '') {
-                  rawImg = aiGalleryPool[idx % aiGalleryPool.length];
+              const uniqueId = b.id !== undefined ? b.id : idx;
+
+              let rawLikes = safeParseArray(b.likes);
+              if (rawLikes.length === 0) {
+                const fakeLikeCount = getPseudoRandom(uniqueId + 'like', 5, 40);
+                rawLikes = Array.from({length: fakeLikeCount}, (_, i) => 'bot-like-' + i);
+              }
+
+              let rawComments = safeParseArray(b.comments);
+              if (rawComments.length === 0) {
+                const fakeCommentCount = getPseudoRandom(uniqueId + 'comm', 1, 5);
+                const sampleComments = [
+                  { name: "CyberGamer", text: "Mantap infonya bro! 🔥" },
+                  { name: "Kialdevaro Fan", text: "Keren banget nih projectnya 👏" },
+                  { name: "PlayerX", text: "Ikut menyimak abangku ✨" },
+                  { name: "RiderNight", text: "Gokil, lanjut terus updatenya!" },
+                  { name: "Zenix", text: "Setuju banget sama postingan ini!" }
+                ];
+                rawComments = [];
+                for(let c=0; c<fakeCommentCount; c++) {
+                  rawComments.push(sampleComments[(uniqueId + c) % sampleComments.length]);
                 }
+              }
 
-                const uniqueId = b.id !== undefined ? b.id : idx;
-
-                // SMART RANDOM LIKES & COMMENTS (Jika di database kosong, buat otomatis dan natural)
-                let rawLikes = safeParseArray(b.likes);
-                if (rawLikes.length === 0) {
-                  const fakeLikeCount = getPseudoRandom(uniqueId + 'like', 4, 35);
-                  rawLikes = Array.from({length: fakeLikeCount}, (_, i) => 'bot-like-' + i);
-                }
-
-                let rawComments = safeParseArray(b.comments);
-                if (rawComments.length === 0) {
-                  const fakeCommentCount = getPseudoRandom(uniqueId + 'comm', 1, 6);
-                  const sampleComments = [
-                    { name: "CyberGamer", text: "Mantap infonya bro! 🔥" },
-                    { name: "Kialdevaro Fan", text: "Keren banget nih projectnya 👏" },
-                    { name: "PlayerX", text: "Ikut menyimak abangku ✨" },
-                    { name: "RiderNight", text: "Gokil, lanjut terus updatenya!" },
-                    { name: "Zenix", text: "Setuju banget sama postingan ini!" },
-                    { name: "GameHunter", text: "Wah asik nih, langsung meluncur ke TKP!" }
-                  ];
-                  rawComments = [];
-                  for(let c=0; c<fakeCommentCount; c++) {
-                    rawComments.push(sampleComments[(uniqueId + c) % sampleComments.length]);
-                  }
-                }
-
-                return {
-                  id: 'bot-' + uniqueId,
-                  dbId: uniqueId,
-                  author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
-                  author_avatar: b.avatar || b.author_avatar || b.photo_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-                  text: b.text || b.content || b.caption || b.message || b.body || '',
-                  image: rawImg,
-                  likes: rawLikes,
-                  comments: rawComments,
-                  created_at: b.created_at || new Date().toISOString(),
-                  timestamp: postTime,
-                  isBot: true
-                };
-              })
-              .filter(b => (now - b.timestamp) <= ONE_DAY);
+              return {
+                id: 'bot-' + uniqueId,
+                dbId: uniqueId,
+                author_name: b.name || b.nickname || b.author_name || b.username || 'K-Verse Bot',
+                author_avatar: b.avatar || b.author_avatar || b.photo_profile || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+                text: b.text || b.content || b.caption || b.message || b.body || 'Berbagi keseruan gaming hari ini! 🎮',
+                image: rawImg,
+                likes: rawLikes,
+                comments: rawComments,
+                created_at: b.created_at || new Date().toISOString(),
+                isBot: true
+              };
+            });
           }
-        } catch(errBot) {
-          console.warn("Tabel kverse_bots kosong atau belum diisi");
         }
+      } catch(err) {
+        console.warn("Menggunakan data fallback bot.");
+      }
 
-        cachedPosts = [...bots, ...posts];
+      // Fallback Otomatis jika tabel bot kosong agar linimasa tetap ramai
+      if (bots.length === 0) {
+        bots = [
+          {
+            id: 'bot-fallback-1',
+            dbId: 1,
+            author_name: 'K-Verse Bot Alpha 🤖',
+            author_avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+            text: 'Mabar game klasik PS1 langsung di browser emang paling juara! 🕹️🔥',
+            image: aiGalleryPool[0],
+            likes: ['1', '2', '3', '4', '5'],
+            comments: [{ name: 'Rider', text: 'Nostalgia banget parah!' }],
+            created_at: new Date().toISOString(),
+            isBot: true
+          },
+          {
+            id: 'bot-fallback-2',
+            dbId: 2,
+            author_name: 'Kialdevaro Gaming ⚡',
+            author_avatar: 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
+            text: 'Ngecek statistik trafik blog hari ini, lumayan banget naiknya! 📈✨',
+            image: aiGalleryPool[1],
+            likes: ['1', '2', '3', '4', '5', '6', '7'],
+            comments: [{ name: 'Admin', text: 'Semoga konsisten terus!' }],
+            created_at: new Date().toISOString(),
+            isBot: true
+          }
+        ];
+      }
 
-        if (cachedPosts.length === 0) {
-          feedBox.innerHTML = '<p style="color: #777777; font-size: 13px; padding: 20px; text-align: center;">Belum ada postingan di linimasa.</p>';
-          return;
-        }
+      cachedPosts = [...bots, ...posts];
 
-        let html = '';
-        cachedPosts.forEach((post, index) => {
-          const likes = safeParseArray(post.likes);
-          const comments = safeParseArray(post.comments);
-          const hasImage = post.image && post.image.trim() !== '';
+      let html = '';
+      cachedPosts.forEach((post, index) => {
+        const likes = safeParseArray(post.likes);
+        const comments = safeParseArray(post.comments);
+        const hasImage = post.image && post.image.trim() !== '';
 
-          html += `
-            <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
-              <div style="align-items: center; display: flex; gap: 8px; margin-bottom: 8px;">
-                <img src="${post.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
-                <div>
-                  <div style="color: ${post.isBot ? '#00ffcc' : '#ffc107'}; font-size: 12px; font-weight: bold;">${post.author_name} ${post.isBot ? '🤖' : ''}</div>
-                  <div style="color: #777777; font-size: 10px;">${formatDate(post.created_at)}</div>
-                </div>
-              </div>
-              <p style="color: white; font-size: 13px; line-height: 1.4; margin: 0px 0px ${hasImage ? '8px' : '10px'}; word-break: break-word;">${post.text || ''}</p>
-              ${hasImage ? `
-                <div style="background: black; border-radius: 6px; margin-bottom: 10px; overflow: hidden; text-align: center;">
-                  <img src="${post.image}" style="max-height: 250px; max-width: 100%; object-fit: contain;" />
-                </div>
-              ` : ''}
-              <div style="display: flex; gap: 8px;">
-                <button class="action-btn open-post-btn" data-id="${post.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 6px; color: #ff9900; font-size: 11px; font-weight: bold; padding: 5px 10px;">❤️ Suka (${likes.length})</button>
-                <button class="action-btn open-post-btn" data-id="${post.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 6px; color: #00ffcc; font-size: 11px; font-weight: bold; padding: 5px 10px;">💬 Komentar (${comments.length})</button>
+        html += `
+          <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
+            <div style="align-items: center; display: flex; gap: 8px; margin-bottom: 8px;">
+              <img src="${post.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; object-fit: cover; width: 32px;" />
+              <div>
+                <div style="color: ${post.isBot ? '#00ffcc' : '#ffc107'}; font-size: 12px; font-weight: bold;">${post.author_name} ${post.isBot ? '🤖' : ''}</div>
+                <div style="color: #777777; font-size: 10px;">${formatDate(post.created_at)}</div>
               </div>
             </div>
-          `;
+            <p style="color: white; font-size: 13px; line-height: 1.4; margin: 0px 0px ${hasImage ? '8px' : '10px'}; word-break: break-word;">${post.text || ''}</p>
+            ${hasImage ? `
+              <div style="background: black; border-radius: 6px; margin-bottom: 10px; overflow: hidden; text-align: center;">
+                <img src="${post.image}" style="max-height: 250px; max-width: 100%; object-fit: contain;" />
+              </div>
+            ` : ''}
+            <div style="display: flex; gap: 8px;">
+              <button class="action-btn open-post-btn" data-id="${post.id}" style="background: rgba(255,153,0,0.15); border: 1px solid rgba(255,153,0,0.4); border-radius: 6px; color: #ff9900; font-size: 11px; font-weight: bold; padding: 5px 10px;">❤️ Suka (${likes.length})</button>
+              <button class="action-btn open-post-btn" data-id="${post.id}" style="background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.4); border-radius: 6px; color: #00ffcc; font-size: 11px; font-weight: bold; padding: 5px 10px;">💬 Komentar (${comments.length})</button>
+            </div>
+          </div>
+        `;
 
-          if ((index + 1) % 30 === 0) {
-            const cycle = Math.floor((index + 1) / 30) % 3;
-            if (cycle === 1) {
-              html += `
-                <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(35, 20, 10)); border-radius: 10px; border: 1px solid rgb(255, 153, 0); padding: 12px; width: 100%; text-align: center;">
-                  <div style="color: #ff9900; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🔥 Kialdevaro Gaming Artikel</div>
-                  <h4 style="color: #ffffff; font-size: 13px; margin: 0px 0px 8px;">Baca Artikel Berita & Tips Seputar Gaming Terbaru!</h4>
-                  <a href="https://kialdevaro-gamingid.blogspot.com/p/kialdevaro-gaming.html" target="_blank" style="display: inline-block; background: rgb(255, 153, 0); border-radius: 6px; color: #000000; font-size: 11px; font-weight: bold; padding: 6px 14px; text-decoration: none;">Baca Artikel Sekarang</a>
-                </div>
-              `;
-            } else if (cycle === 2) {
-              html += `
-                <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(10, 30, 35)); border-radius: 10px; border: 1px solid rgb(0, 255, 204); padding: 12px; width: 100%; text-align: center;">
-                  <div style="color: #00ffcc; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🎮 Kialdevaro Game Hub</div>
-                  <h4 style="color: #ffffff; font-size: 13px; margin: 0px 0px 8px;">Mainkan Ratusan Game Seru Langsung di Browser!</h4>
-                  <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_blank" style="display: inline-block; background: rgb(0, 255, 204); border-radius: 6px; color: #000000; font-size: 11px; font-weight: bold; padding: 6px 14px; text-decoration: none;">Buka Game Hub</a>
-                </div>
-              `;
-            } else {
-              html += `
-                <div style="background: rgb(18, 18, 18); border-radius: 10px; border: 1px solid rgb(51, 51, 51); padding: 12px; width: 100%; text-align: center;">
-                  <div style="color: #888888; font-size: 9px; margin-bottom: 4px; text-transform: uppercase;">Sponsor / Iklan Monetag</div>
-                  <div style="color: #aaaaaa; font-size: 11px; padding: 6px;">[Slot Iklan Monetag Aktif]</div>
-                </div>
-              `;
-            }
+        if ((index + 1) % 30 === 0) {
+          const cycle = Math.floor((index + 1) / 30) % 3;
+          if (cycle === 1) {
+            html += `
+              <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(35, 20, 10)); border-radius: 10px; border: 1px solid rgb(255, 153, 0); padding: 12px; width: 100%; text-align: center;">
+                <div style="color: #ff9900; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🔥 Kialdevaro Gaming Artikel</div>
+                <h4 style="color: #ffffff; font-size: 13px; margin: 0px 0px 8px;">Baca Artikel Berita & Tips Seputar Gaming Terbaru!</h4>
+                <a href="https://kialdevaro-gamingid.blogspot.com/p/kialdevaro-gaming.html" target="_blank" style="display: inline-block; background: rgb(255, 153, 0); border-radius: 6px; color: #000000; font-size: 11px; font-weight: bold; padding: 6px 14px; text-decoration: none;">Baca Artikel Sekarang</a>
+              </div>
+            `;
+          } else if (cycle === 2) {
+            html += `
+              <div style="background: linear-gradient(135deg, rgb(22, 22, 22), rgb(10, 30, 35)); border-radius: 10px; border: 1px solid rgb(0, 255, 204); padding: 12px; width: 100%; text-align: center;">
+                <div style="color: #00ffcc; font-size: 10px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">🎮 Kialdevaro Game Hub</div>
+                <h4 style="color: #ffffff; font-size: 13px; margin: 0px 0px 8px;">Mainkan Ratusan Game Seru Langsung di Browser!</h4>
+                <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_blank" style="display: inline-block; background: rgb(0, 255, 204); border-radius: 6px; color: #000000; font-size: 11px; font-weight: bold; padding: 6px 14px; text-decoration: none;">Buka Game Hub</a>
+              </div>
+            `;
+          } else {
+            html += `
+              <div style="background: rgb(18, 18, 18); border-radius: 10px; border: 1px solid rgb(51, 51, 51); padding: 12px; width: 100%; text-align: center;">
+                <div style="color: #888888; font-size: 9px; margin-bottom: 4px; text-transform: uppercase;">Sponsor / Iklan Monetag</div>
+                <div style="color: #aaaaaa; font-size: 11px; padding: 6px;">[Slot Iklan Monetag Aktif]</div>
+              </div>
+            `;
           }
-        });
-        feedBox.innerHTML = html;
-      } catch(err) {
-        console.error("Render Feed Error:", err);
-        feedBox.innerHTML = '<p style="color: #ff5500; font-size: 13px; padding: 20px; text-align: center; word-break: break-word;">Gagal memuat linimasa: ' + (err.message || JSON.stringify(err)) + '</p>';
-      }
+        }
+      });
+      feedBox.innerHTML = html;
     }
 
     async function renderLeaderboard() {
@@ -767,7 +775,7 @@
         }
 
         const likes = safeParseArray(found.likes);
-        if(likeBtn) likeBtn.innerHTML = `❤️️ Suka (${likes.length})`;
+        if(likeBtn) likeBtn.innerHTML = `❤️ Suka (${likes.length})`;
 
         if(currentUser && (currentUser.uid === found.author_uid || isUserOwner(currentUser))) {
           if(delBtn) delBtn.style.display = 'block';
