@@ -452,7 +452,7 @@
       renderMyGallery();
     }
 
-    // Render Feed / Beranda (Menggabungkan kverse_posts dan kverse_bots)
+    // Render Feed / Beranda (Aman dengan fallback terpisah)
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
@@ -462,25 +462,32 @@
       }
 
       try {
-        // Ambil postingan dari user dan postingan dari bot secara paralel
-        const [postsRes, botsRes] = await Promise.all([
-          supabase.from('kverse_posts').select('*'),
-          supabase.from('kverse_bots').select('*')
-        ]);
+        let posts = [];
+        let bots = [];
 
-        const posts = postsRes.data || [];
-        const bots = (botsRes.data || []).map(b => ({
-          id: 'bot-' + (b.id || Math.random()),
-          author_name: b.name || b.author_name || 'K-Verse Bot',
-          author_avatar: b.avatar || b.author_avatar || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-          text: b.text || b.content || '',
-          image: b.image || '',
-          likes: b.likes || [],
-          comments: b.comments || [],
-          isBot: true
-        }));
+        // Ambil data postingan user
+        const postsRes = await supabase.from('kverse_posts').select('*');
+        if (postsRes.data) posts = postsRes.data;
 
-        // Gabungkan bot posts dan user posts
+        // Ambil data bot secara terpisah agar jika tabel kosong/belum siap tidak memblokir user posts
+        try {
+          const botsRes = await supabase.from('kverse_bots').select('*');
+          if (botsRes.data) {
+            bots = botsRes.data.map(b => ({
+              id: 'bot-' + (b.id || Math.random()),
+              author_name: b.name || b.author_name || 'K-Verse Bot',
+              author_avatar: b.avatar || b.author_avatar || 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+              text: b.text || b.content || '',
+              image: b.image || '',
+              likes: b.likes || [],
+              comments: b.comments || [],
+              isBot: true
+            }));
+          }
+        } catch(errBot) {
+          console.warn("Tabel kverse_bots belum aktif/kosong");
+        }
+
         cachedPosts = [...bots, ...posts];
 
         if (cachedPosts.length === 0) {
@@ -494,7 +501,7 @@
           const comments = safeParseArray(post.comments);
           const hasImage = post.image && post.image.trim() !== '';
 
-          // Render Postingan (User atau Bot)
+          // Render Postingan
           html += `
             <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); padding: 12px; width: 100%;">
               <div style="align-items: center; display: flex; gap: 8px; margin-bottom: 8px;">
@@ -842,8 +849,7 @@
 
       uploadNewAvatar: async function(e) {
         if (!currentUser) {
-          alert("Silakan login terlebih dahulu.
-");
+          alert("Silakan login terlebih dahulu.");
           return;
         }
         const file = e.target.files[0];
