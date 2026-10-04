@@ -2,7 +2,7 @@ name: K-Verse Hyper Automation 24/7
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Jalankan Mesin Bot ID & Merek Random 24/7
+      - name: Jalankan Mesin Multi-Karakter, Beragam Topik, & Interaksi 24/7
         env:
           SUPABASE_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_posts"
           SUPABASE_USERS_URL: "https://szuntuuhxcetqafaazai.supabase.co/rest/v1/kverse_users"
@@ -38,23 +38,27 @@ jobs:
               "Prefer": "resolution=merge-duplicates"
           }
 
-          # Matriks Merek & ID Acak yang Dinamis
-          brand_prefixes = ["Kialdevaro", "K-Verse", "Cyber", "Pixel", "Neon", "Nova", "Quantum", "Shadow", "Nexus", "Stellar", "Vortex", "Apex"]
-          brand_suffixes = ["Gaming ⚡", "INSIGHT 🌐", "AI 🤖", "Game 🎮", "Group 🚀", "Media 🎬", "Studio 💻", "Hub ✨", "Network 📈", "Elite 🏆"]
+          # Karakter dan Nama Manusia yang Bervariasi
+          first_names = ["Rizky", "Ahmad", "Dimas", "Putri", "Siti", "Reza", "Fajar", "Dewi", "Surya", "Bayu", "Gilang", "Intan", "Yoga", "Sinta", "Agung", "Maya", "Dandi", "Nisa", "Bima", "Lestari", "Andi", "Mega", "Fauzi", "Rian", "Taufik", "Dwi", "Eko", "Wahyudi", "Naufal", "Zaki"]
+          last_names = ["Pratama", "Saputra", "Wijaya", "Santoso", "Ramadhan", "Hidayat", "Nugroho", "Kusuma", "Utama", "Siregar", "Maulana", "Setiawan", "Puspita", "Wahyudi", "Kurniawan", "Permana", "Hakim", "Fadillah", "Gunawan", "Susanto"]
+          
+          archetypes = ["Tech & AI", "Lifestyle", "Gamer", "Motivator", "Casual"]
 
-          # 1. Inisialisasi 100 Bot dengan Nama Merek & ID Unik di kverse_users
+          # 1. Inisialisasi 100 Bot dengan Karakter Unik
           bots_cache = []
           for i in range(1, 101):
               b_uid = f"bot-user-{i}"
-              b_name = f"{random.choice(brand_prefixes)} {random.choice(brand_suffixes)}"
+              b_name = f"{random.choice(first_names)} {random.choice(last_names)}"
               b_email = f"bot{i}@kverse.local"
               b_fid = f"KV-{random.randint(100000, 999999)}"
               b_avatar = f"https://picsum.photos/seed/botavatar-{i}/150/150"
+              b_arch = random.choice(archetypes)
               
               bots_cache.append({
                   "uid": b_uid,
                   "name": b_name,
-                  "avatar": b_avatar
+                  "avatar": b_avatar,
+                  "archetype": b_arch
               })
 
               user_payload = json.dumps({
@@ -63,39 +67,57 @@ jobs:
                   "email": b_email,
                   "avatar": b_avatar,
                   "friendId": b_fid,
-                  "xp": random.randint(10, 800)
+                  "xp": random.randint(10, 1200)
               }).encode('utf-8')
               
               req_u = urllib.request.Request(users_url + "?on_conflict=uid", data=user_payload, headers=headers, method="POST")
               try:
                   urllib.request.urlopen(req_u)
-              except Exception as e:
+              except:
                   pass
 
-          # 2. Matriks Bahasa Relate (Kombinasi Dinamis Jutaan Variasi)
-          prefixes = [
-              "Lagi seru banget nih", "Baru tahu kalau", "Pengalaman seru main", "Tips asik buat", 
-              "Ngecek performa", "Eksplorasi tanpa batas di", "Nostalgia parah sama", "Pembahasan santai seputar",
-              "Gak nyangka ternyata", "Rekomendasi terbaik untuk", "Mulai hari ini coba", "Sesi gaming santai dengan"
-          ]
-          topics = [
-              "game klasik PS1 langsung di browser", "layout CSS Blogger responsif anti ribet", 
-              "katalog HTML5 Playgama gratis", "Shopee Affiliate & Buylink digital storefront", 
-              "editing video pendek cinematic pakai CapCut", "setup Gran Turismo PSP biar makin gacor", 
-              "tema dark aesthetic ala street style", "integrasi AI chatbot Dify di situs web"
-          ]
-          suffixes = [
-              "bikin ketagihan terus! 🚀", "sukses bikin performa naik drastis 🔥", "wajib banget dicoba kawan-kawan 🕹️", 
-              "lest go, makin produktif! ✨", "keren parah gak ada obat 💯", "hasilnya bener-bener memuaskan 📈", 
-              "auto gacor dan lancar jaya! ⚡", "paling juara buat dicoba hari ini 🌟"
-          ]
+          # 2. Bank Topik Berdasarkan Karakter (Sangat Luas ala Media Sosial)
+          content_pools = {
+              "Tech & AI": [
+                  "Lagi nyobain tools AI terbaru untuk automasi workflow, hasilnya bener-bener di luar nalar! 🤖✨",
+                  "Eksplorasi arsitektur web modern emang gak ada habisnya. Struktur kode yang rapi bikin performa melesat. 💻📈",
+                  "Setup workspace minimalis dengan pencahayaan warm bikin fokus ngoding meningkat drastis malam ini. ⚡",
+                  "Ada yang udah nyobain integrasi chatbot AI di platform web? Sesi interaksi jadi jauh lebih hidup. 🚀"
+              ],
+              "Lifestyle": [
+                  "Menikmati senja sore ini Sambil mendengarkan playlist chill, recharge energi buat minggu depan. ☕🌅",
+                  "Gaya berpakaian dengan sentuhan dark cinematic dan street style emang paling nyaman dipakai jalan-jalan. 🖤",
+                  "Ngecek beberapa referensi desain visual baru yang estetik buat nambah inspirasi kreatif harian. ✨",
+                  "Menjaga keseimbangan antara produktivitas kerja digital dan waktu istirahat fisik itu penting banget. 🌿"
+              ],
+              "Gamer": [
+                  "Nostalgia mabar game klasik era PS1 langsung di browser tanpa ribet download, serunya dapet banget! 🕹️🔥",
+                  "Lagi seru-serunya nyari rekor waktu terbaik di trek balap Gran Turismo PSP, mobil andalan udah disetel maksimal! 🏎️💨",
+                  "Katalog game HTML5 di web sekarang makin variatif aja, pas banget buat selingan santai pas lagi penat. 🎮✨",
+                  "Ada rekomendasi game petualangan seru minggu ini? Yuk, sharing di kolom komentar! 👇"
+              ],
+              "Motivator": [
+                  "Konsistensi kecil setiap hari jauh lebih berdampak daripada ledakan semangat sesaat yang cepat padam. Tetap semangat! 💪📈",
+                  "Jangan takut sama proses yang lambat, yang penting arah tujuannya jelas dan kamu gak pernah berhenti melangkah. 🌟",
+                  "Membangun brand digital itu butuh ketekunan sabar. Nikmati setiap fase belajarnya kawan-kawan! 🚀",
+                  "Fokus pada hal yang bisa kita kontrol, lepaskan ekspektasi berlebihan pada hal di luar kendali kita. ✨"
+              ],
+              "Casual": [
+                  "Jam segini paling enak ngopi santai sambil scrolling linimasa K-Verse, suasananya adem banget. ☕😄",
+                  "Tiba-tiba pengen nge-review perjalanan project digital yang udah dibangun dari nol sampai sebesar sekarang. Waktu cepet banget ya! 🕰️",
+                  "Cuaca malam ini mendukung banget buat tidur nyenyak atau maraton dengerin musik favorit. 🎶",
+                  "Ada gak sih yang punya hobi aneh tapi seru pas lagi gabut di rumah? Cerita dong! 😂"
+              ]
+          }
 
-          # Kirim 2 postingan otomatis dari bot/merek random setiap kali aksi berjalan
-          for _ in range(2):
+          # 3. Buat 1 sampai 2 Postingan Sesuai Karakter Bot Terpilih
+          post_count = random.randint(1, 2)
+          for _ in range(post_count):
               chosen_bot = random.choice(bots_cache)
-              text = f"{random.choice(prefixes)} {random.choice(topics)}, {random.choice(suffixes)}"
+              pool = content_pools.get(chosen_bot["archetype"], content_pools["Casual"])
+              text = random.choice(pool)
               
-              # 500rb Kombinasi Gambar Random (Seed 1 s.d 500.000)
+              # 500rb Kombinasi Gambar Random
               img_id = random.randint(1, 500000)
               image = f"https://picsum.photos/seed/kverse-img-{img_id}/600/400"
 
@@ -115,7 +137,59 @@ jobs:
               except Exception as e:
                   print("Post error:", e)
 
-          # 3. Tambah 1 - 5 XP acak untuk Owner (KV-230901) dan semua Bot setiap siklus
+          # 4. Simulasi Like & Komentar Berkala yang Sesuai Konteks
+          try:
+              req_get_posts = urllib.request.Request(url + "?select=id,likes,comments&order=created_at.desc&limit=20", headers=headers)
+              with urllib.request.urlopen(req_get_posts) as resp:
+                  existing_posts = json.loads(resp.read().decode())
+                  
+                  comment_bank = [
+                      "Setuju banget sama opini ini! 👏", "Mantap pembahasannya gan!", "Keren, menginspirasi sekali.", 
+                      "Wah, insight baru buat saya nih. Thanks!", "Gacor parah sih ini 🔥", 
+                      "Setuju,, jalani prosesnya dengan santai.", "Mantap jiwa kawan!", "Wajib dicatat nih tipsnya."
+                  ]
+
+                  for p in existing_posts:
+                      if random.random() < 0.45:
+                          p_id = p["id"]
+                          
+                          likes = []
+                          try:
+                              likes = json.loads(p.get("likes", "[]"))
+                              if not isinstance(likes, list): likes = []
+                          except:
+                              likes = []
+
+                          random_bot = random.choice(bots_cache)
+                          if random_bot["uid"] not in likes:
+                              likes.append(random_bot["uid"])
+
+                          comments = []
+                          try:
+                              comments = json.loads(p.get("comments", "[]"))
+                              if not isinstance(comments, list): comments = []
+                          except:
+                              comments = []
+
+                          if random.random() < 0.5:
+                              commenter = random.choice(bots_cache)
+                              comments.append({
+                                  "name": commenter["name"],
+                                  "text": random.choice(comment_bank)
+                              })
+
+                          patch_post_url = f"{url}?id=eq.{p_id}"
+                          patch_post_data = json.dumps({
+                              "likes": json.dumps(likes),
+                              "comments": json.dumps(comments)
+                          }).encode('utf-8')
+
+                          patch_req = urllib.request.Request(patch_post_url, data=patch_post_data, headers=headers, method='PATCH')
+                          urllib.request.urlopen(patch_req)
+          except Exception as e:
+              print("Interaction error:", e)
+
+          # 5. Tambah 1 - 5 XP acak untuk Owner & Bot
           try:
               req_users = urllib.request.Request(users_url + "?select=uid,friendId,xp,email", headers=headers)
               with urllib.request.urlopen(req_users) as resp:
@@ -133,7 +207,7 @@ jobs:
           except Exception as e:
               print("XP update error:", e)
 
-          # 4. Hapus Postingan Bot Berusia Lebih dari 24 Jam
+          # 6. Hapus Postingan Bot Berusia Lebih dari 24 Jam
           yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
           del_url = f"{url}?author_uid=like.bot-user-*&created_at=lt.{yesterday}"
           del_req = urllib.request.Request(del_url, headers=headers, method="DELETE")
