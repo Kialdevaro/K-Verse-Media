@@ -134,6 +134,27 @@
     const OWNER_EMAIL = "akunwildrift2020@gmail.com";
     const OWNER_FRIEND_ID = "KV-230901";
 
+    const richBotDataset = [
+      {
+        id: 991,
+        author_name: "Kialdevaro Gaming ⚡",
+        author_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        text: "Mabar game klasik PS1 langsung di browser emang paling juara! Tanpa ribet download, langsung 60fps mulus. 🕹️🔥",
+        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",
+        likes: JSON.stringify(["1", "2", "3"]),
+        comments: JSON.stringify([{ name: "Rider", text: "Nostalgia banget parah!" }])
+      },
+      {
+        id: 992,
+        author_name: "Kialdevaro INSIGHT 🌐",
+        author_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+        text: "Ngecek statistik trafik blog hari ini, lumayan banget naiknya! Tetap semangat berkarya kawan-kawan. 📈🚀",
+        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80",
+        likes: JSON.stringify(["1", "2"]),
+        comments: JSON.stringify([{ name: "Admin", text: "Mantap!" }])
+      }
+    ];
+
     const firebaseConfig = {
       apiKey: "AIzaSyCo8ggig1Gk2ioaTa3lb_QtHIawfb4DNt8",
       authDomain: "kialdevaro-gaming.firebaseapp.com",
@@ -240,7 +261,6 @@
         
         if (data) {
           currentUser = data;
-          // Paksa ID owner jika emailnya sesuai
           if (isOwnerEmail && currentUser.friendId !== OWNER_FRIEND_ID) {
             currentUser.friendId = OWNER_FRIEND_ID;
             await supabase.from('kverse_users').update({ friendId: OWNER_FRIEND_ID }).eq('uid', user.uid);
@@ -252,7 +272,7 @@
             email: user.email || '',
             avatar: user.photoURL || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
             friendId: isOwnerEmail ? OWNER_FRIEND_ID : ('KV-' + Math.floor(100000 + Math.random() * 900000)),
-            xp: isOwnerEmail ? 5000 : 100
+            xp: 0 // Mulai dari 0 sesuai aturan baru
           };
           await supabase.from('kverse_users').insert([currentUser]);
         }
@@ -290,7 +310,7 @@
       if (localStorage.getItem(claimedKey)) return;
 
       const randomXp = Math.floor(Math.random() * 21) + 30; 
-      currentUser.xp = (currentUser.xp || 100) + randomXp;
+      currentUser.xp = (currentUser.xp || 0) + randomXp;
 
       await supabase.from('kverse_users').update({ xp: currentUser.xp }).eq('uid', currentUser.uid);
       localStorage.setItem(claimedKey, 'true');
@@ -303,13 +323,11 @@
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       let { data } = await supabase.from('kverse_posts').select('*').order('created_at', { ascending: false });
-      if (!data || data.length === 0) {
-        feedBox.innerHTML = '<p style="color: #777; text-align: center; padding: 20px;">Belum ada postingan.</p>';
-        return;
-      }
-      cachedPosts = data;
+      let posts = (data && data.length > 0) ? data : richBotDataset;
+      cachedPosts = posts;
+
       let html = '';
-      data.forEach(p => {
+      posts.forEach(p => {
         const likes = safeParseArray(p.likes);
         const comments = safeParseArray(p.comments);
         html += `
@@ -318,7 +336,7 @@
               <img src="${p.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
               <div>
                 <div style="color: #00ffcc; font-size: 12px; font-weight: bold;">${p.author_name}</div>
-                <div style="color: #777; font-size: 10px;">${new Date(p.created_at).toLocaleString('id-ID')}</div>
+                <div style="color: #777; font-size: 10px;">${p.created_at ? new Date(p.created_at).toLocaleString('id-ID') : 'Baru saja'}</div>
               </div>
             </div>
             <p style="color: white; font-size: 13px; margin: 0 0 8px; word-break: break-word;">${p.text || ''}</p>
@@ -336,12 +354,15 @@
     async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
       let { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
-      if (!data || data.length === 0) {
-        rankBox.innerHTML = '<p style="color: #777; text-align: center; padding: 20px;">Belum ada data anggota di papan skor.</p>';
-        return;
-      }
+      
+      // Fallback jika database kosong agar langsung tampil default owner & bot
+      let users = (data && data.length > 0) ? data : [
+        { name: 'Kialdevaro Gaming ⚡', friendId: OWNER_FRIEND_ID, xp: 0, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+        { name: 'K-Verse Bot Alpha 🤖', friendId: 'KV-999001', xp: 0, avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80' }
+      ];
+
       let html = '';
-      data.forEach((u, idx) => {
+      users.forEach((u, idx) => {
         let badge = '#' + (idx + 1);
         let color = '#888';
         if(idx === 0) color = '#ffD700';
