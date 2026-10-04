@@ -72,7 +72,7 @@
 
     <!-- 2. TAB PAPAN SKOR -->
     <div id="view-rank" class="tab-view" style="display: none;">
-      <h4 style="color: #ff9900; font-size: 14px; font-weight: 600; margin: 0px 0px 10px; width: 100%;">Papan Skor Global Anggota</h4>
+      <h4 style="color: #ff9900; font-size: 14px; font-weight: 600; margin: 0px 0px 10px; width: 100%;">Papan Skor Global Anggota (Urutan XP Terbesar)</h4>
       <div id="rank-box" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
         <p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Memuat papan skor...</p>
       </div>
@@ -133,27 +133,6 @@
 
     const OWNER_EMAIL = "akunwildrift2020@gmail.com";
     const OWNER_FRIEND_ID = "KV-230901";
-
-    const richBotDataset = [
-      {
-        id: 991,
-        author_name: "Kialdevaro Gaming ⚡",
-        author_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        text: "Mabar game klasik PS1 langsung di browser emang paling juara! Tanpa ribet download, langsung 60fps mulus. 🕹️🔥",
-        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",
-        likes: JSON.stringify(["1", "2", "3"]),
-        comments: JSON.stringify([{ name: "Rider", text: "Nostalgia banget parah!" }])
-      },
-      {
-        id: 992,
-        author_name: "Kialdevaro INSIGHT 🌐",
-        author_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-        text: "Ngecek statistik trafik blog hari ini, lumayan banget naiknya! Tetap semangat berkarya kawan-kawan. 📈🚀",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80",
-        likes: JSON.stringify(["1", "2"]),
-        comments: JSON.stringify([{ name: "Admin", text: "Mantap!" }])
-      }
-    ];
 
     const firebaseConfig = {
       apiKey: "AIzaSyCo8ggig1Gk2ioaTa3lb_QtHIawfb4DNt8",
@@ -272,7 +251,7 @@
             email: user.email || '',
             avatar: user.photoURL || 'https://cdn-icons-png.flaticon.com/512/147/147144.png',
             friendId: isOwnerEmail ? OWNER_FRIEND_ID : ('KV-' + Math.floor(100000 + Math.random() * 900000)),
-            xp: 0 // Mulai dari 0 sesuai aturan baru
+            xp: 0 // Mulai murni dari 0 XP
           };
           await supabase.from('kverse_users').insert([currentUser]);
         }
@@ -309,7 +288,7 @@
       const claimedKey = 'kverse_claimed_' + currentUser.uid + '_' + keyStart;
       if (localStorage.getItem(claimedKey)) return;
 
-      const randomXp = Math.floor(Math.random() * 21) + 30; 
+      const randomXp = Math.floor(Math.random() * 21) + 30; // 30-50 XP
       currentUser.xp = (currentUser.xp || 0) + randomXp;
 
       await supabase.from('kverse_users').update({ xp: currentUser.xp }).eq('uid', currentUser.uid);
@@ -323,20 +302,27 @@
     async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       let { data } = await supabase.from('kverse_posts').select('*').order('created_at', { ascending: false });
-      let posts = (data && data.length > 0) ? data : richBotDataset;
+      
+      let posts = (data && data.length > 0) ? data : [];
       cachedPosts = posts;
+
+      if (posts.length === 0) {
+        feedBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Belum ada postingan. Tunggu bot otomatis atau buat postingan baru!</p>';
+        return;
+      }
 
       let html = '';
       posts.forEach(p => {
         const likes = safeParseArray(p.likes);
         const comments = safeParseArray(p.comments);
+
         html += `
           <div style="background: #161616; border-radius: 10px; border: 1px solid #262626; padding: 12px; width: 100%;">
             <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
               <img src="${p.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
               <div>
                 <div style="color: #00ffcc; font-size: 12px; font-weight: bold;">${p.author_name}</div>
-                <div style="color: #777; font-size: 10px;">${p.created_at ? new Date(p.created_at).toLocaleString('id-ID') : 'Baru saja'}</div>
+                <div style="color: #777; font-size: 10px;">${p.created_at ? new Date(p.created_at).toLocaleString('id-ID') : ''}</div>
               </div>
             </div>
             <p style="color: white; font-size: 13px; margin: 0 0 8px; word-break: break-word;">${p.text || ''}</p>
@@ -353,183 +339,5 @@
 
     async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
-      let { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(20);
-      
-      // Fallback jika database kosong agar langsung tampil default owner & bot
-      let users = (data && data.length > 0) ? data : [
-        { name: 'Kialdevaro Gaming ⚡', friendId: OWNER_FRIEND_ID, xp: 0, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
-        { name: 'K-Verse Bot Alpha 🤖', friendId: 'KV-999001', xp: 0, avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80' }
-      ];
-
-      let html = '';
-      users.forEach((u, idx) => {
-        let badge = '#' + (idx + 1);
-        let color = '#888';
-        if(idx === 0) color = '#ffD700';
-        else if(idx === 1) color = '#C0C0C0';
-        else if(idx === 2) color = '#CD7F32';
-
-        html += `
-          <div style="align-items: center; background: #161616; border-radius: 8px; border: 1px solid #262626; display: flex; justify-content: space-between; padding: 8px 12px; width: 100%;">
-            <div style="align-items: center; display: flex; gap: 10px;">
-              <span style="color: ${color}; font-size: 13px; font-weight: bold; width: 24px; text-align: center;">${badge}</span>
-              <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
-              <div>
-                <div style="color: white; font-size: 12px; font-weight: bold;">${u.name}</div>
-                <div style="color: #00ffcc; font-size: 10px;">ID: #${u.friendId || 'KV-000000'}</div>
-              </div>
-            </div>
-            <span style="color: #ff9900; font-size: 12px; font-weight: bold;">${formatNum(u.xp)} XP</span>
-          </div>
-        `;
-      });
-      rankBox.innerHTML = html;
-    }
-
-    function renderProfile() {
-      const nameEl = document.getElementById('my-name');
-      const idEl = document.getElementById('my-id');
-      const xpEl = document.getElementById('my-xp');
-      const avatarEl = document.getElementById('my-avatar');
-      const authBtn = document.getElementById('auth-btn');
-
-      if (currentUser) {
-        nameEl.textContent = currentUser.name;
-        idEl.textContent = 'ID: #' + (currentUser.friendId || 'KV-000000');
-        xpEl.textContent = 'Total XP: ' + formatNum(currentUser.xp || 0);
-        if (currentUser.avatar) avatarEl.src = currentUser.avatar;
-        authBtn.textContent = 'Keluar';
-      } else {
-        nameEl.textContent = 'Tamu (Belum Login)';
-        idEl.textContent = 'ID: #KV-000000';
-        xpEl.textContent = 'Total XP: 0';
-        avatarEl.src = 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
-        authBtn.textContent = 'Login';
-      }
-      renderMyGallery();
-    }
-
-    async function renderMyGallery() {
-      const galleryBox = document.getElementById('my-gallery');
-      if (!currentUser) {
-        galleryBox.innerHTML = '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Login untuk melihat galeri.</span>';
-        return;
-      }
-      let { data } = await supabase.from('kverse_posts').select('*').eq('author_uid', currentUser.uid);
-      if (!data || data.length === 0) {
-        galleryBox.innerHTML = '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada postingan.</span>';
-        return;
-      }
-      let html = '';
-      data.forEach(p => {
-        if(p.image) {
-          html += `<div class="action-btn open-post-btn" data-id="${p.id}" style="aspect-ratio: 1; background: black; border-radius: 6px; overflow: hidden;"><img src="${p.image}" style="height: 100%; width: 100%; object-fit: cover;" /></div>`;
-        }
-      });
-      galleryBox.innerHTML = html || '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada foto.</span>';
-    }
-
-    async function submitPost() {
-      if (!currentUser) { alert("Silakan Login terlebih dahulu!"); KVerseUI.switchTab('profile'); return; }
-      const text = document.getElementById('post-text').value.trim();
-      const image = tempBase64 || '';
-      if (!text && !image) { alert("Tulis sesuatu atau pilih foto."); return; }
-
-      await supabase.from('kverse_posts').insert([{
-        author_uid: currentUser.uid,
-        author_name: currentUser.name,
-        author_avatar: currentUser.avatar,
-        text: text,
-        image: image,
-        likes: JSON.stringify([]),
-        comments: JSON.stringify([])
-      }]);
-
-      document.getElementById('post-text').value = '';
-      tempBase64 = null;
-      document.getElementById('preview-box').style.display = 'none';
-      renderFeed();
-      alert("Berhasil memposting!");
-    }
-
-    async function openDetail(id) {
-      activePost = cachedPosts.find(p => p.id == id);
-      if(!activePost) return;
-
-      document.getElementById('modal-text-tag').textContent = activePost.text || '';
-      const imgBox = document.getElementById('modal-img-box');
-      if(activePost.image) {
-        imgBox.style.display = 'block';
-        document.getElementById('modal-img-tag').src = activePost.image;
-      } else {
-        imgBox.style.display = 'none';
-      }
-
-      const likes = safeParseArray(activePost.likes);
-      document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
-
-      const delBtn = document.getElementById('modal-del-btn');
-      if(currentUser && (currentUser.uid === activePost.author_uid || isUserOwner(currentUser))) {
-        delBtn.style.display = 'block';
-      } else {
-        delBtn.style.display = 'none';
-      }
-
-      const comments = safeParseArray(activePost.comments);
-      let cHtml = '';
-      if(comments.length === 0) cHtml = '<span style="color: #777;">Belum ada komentar.</span>';
-      else comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> ${c.text}</div>`);
-      document.getElementById('modal-comments-box').innerHTML = cHtml;
-
-      document.getElementById('detail-modal').style.display = 'flex';
-    }
-
-    async function pressLike() {
-      if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
-      let likes = safeParseArray(activePost.likes);
-      const idx = likes.indexOf(currentUser.uid);
-      if(idx > -1) likes.splice(idx, 1);
-      else likes.push(currentUser.uid);
-
-      await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
-      activePost.likes = JSON.stringify(likes);
-      document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
-      renderFeed();
-    }
-
-    async function submitComment() {
-      if(!currentUser || !activePost) { alert("Login dulu untuk berkomentar!"); return; }
-      const input = document.getElementById('modal-comment-input');
-      const text = input.value.trim();
-      if(!text) return;
-
-      let comments = safeParseArray(activePost.comments);
-      comments.push({ name: currentUser.name, text: text });
-      await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
-      activePost.comments = JSON.stringify(comments);
-      input.value = '';
-
-      let cHtml = '';
-      comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> ${c.text}</div>`);
-      document.getElementById('modal-comments-box').innerHTML = cHtml;
-      renderFeed();
-    }
-
-    async function pressDelete() {
-      if(!activePost || !confirm("Hapus postingan ini?")) return;
-      await supabase.from('kverse_posts').delete().eq('id', activePost.id);
-      KVerseUI.closeModal();
-      renderFeed();
-      renderMyGallery();
-    }
-
-    async function toggleAuth() {
-      if(currentUser) {
-        if(confirm("Keluar akun?")) { await signOut(auth); currentUser = null; renderProfile(); renderLeaderboard(); }
-      } else {
-        try { await signInWithPopup(auth, provider); } catch(e) { alert("Gagal login popup."); }
-      }
-    }
-  </script>
-</body>
-</html>
+      let { data } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(100);
+   
