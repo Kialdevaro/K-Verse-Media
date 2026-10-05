@@ -398,14 +398,16 @@
           `;
         });
         feedBox.innerHTML = html;
-      } catch(err) {
+                  } catch(err) {
+        console.error("Render feed error:", err);
         feedBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Error: ${err.message || err}</p>`;
-        
+      }
+    }
+
     async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
       if (!rankBox) return;
       try {
-        let { data, error } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(100);
         
         if (!data || data.length === 0) {
           rankBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Belum ada data di papan skor.</p>';
