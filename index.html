@@ -249,16 +249,17 @@
         const openBtn = e.target.closest('.open-post-btn');
         if(openBtn) { openDetail(openBtn.getAttribute('data-id')); return; }
 
-        if(e.target.id === 'select-img-btn') { document.getElementById('post-file').click(); return; }
-        if(e.target.id === 'clear-img-btn') { tempBase64 = null; document.getElementById('preview-box').style.display = 'none'; document.getElementById('post-file').value = ''; return; }
-        if(e.target.id === 'submit-post-btn') { submitPost(); return; }
-        if(e.target.id === 'auth-btn') { toggleAuth(); return; }
-        if(e.target.id === 'close-modal-btn') { KVerseUI.closeModal(); return; }
-        if(e.target.id === 'modal-like-btn') { pressLike(); return; }
-        if(e.target.id === 'modal-del-btn') { pressDelete(); return; }
-        if(e.target.id === 'modal-comment-submit-btn') { submitComment(); return; }
+                if(e.target.closest('#select-img-btn')) { document.getElementById('post-file').click(); return; }
+        if(e.target.closest('#clear-img-btn')) { tempBase64 = null; document.getElementById('preview-box').style.display = 'none'; document.getElementById('post-file').value = ''; return; }
+        if(e.target.closest('#submit-post-btn')) { submitPost(); return; }
+        if(e.target.closest('#auth-btn')) { toggleAuth(); return; }
+        if(e.target.closest('#close-modal-btn')) { KVerseUI.closeModal(); return; }
+        if(e.target.closest('#modal-like-btn')) { pressLike(); return; }
+        if(e.target.closest('#modal-del-btn')) { pressDelete(); return; }
+        if(e.target.closest('#modal-comment-submit-btn')) { submitComment(); return; }
         if(e.target.closest('#avatar-trigger')) { document.getElementById('avatar-file-input').click(); return; }
-      } catch(err) {
+      
+     } catch(err) {
         console.error("Click error:", err);
       }
     });
