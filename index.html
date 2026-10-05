@@ -399,11 +399,8 @@
         });
         feedBox.innerHTML = html;
       } catch(err) {
-        console.error("Render feed error:", err);
-        feedBox.innerHTML = '<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat linimasa.</p>';
-      }
-    }
-
+        feedBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Error: ${err.message || err}</p>`;
+        
     async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
       if (!rankBox) return;
