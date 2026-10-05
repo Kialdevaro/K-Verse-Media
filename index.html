@@ -1,123 +1,3 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>K-Verse Media</title>
-  <style>
-    html, body {
-      background-color: #0b0b0b !important;
-      color: #ffffff !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100% !important;
-      min-height: 100vh !important;
-      font-family: system-ui, -apple-system, sans-serif;
-      box-sizing: border-box;
-      overflow-x: hidden;
-    }
-    * { box-sizing: border-box; }
-    #kialdevaro-community-hub {
-      max-width: 100% !important;
-      width: 100% !important;
-      min-height: 100vh !important;
-      margin: 0 !important;
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      background: rgb(16, 16, 16);
-    }
-    .tab-view { display: flex; flex-direction: column; width: 100%; flex: 1; }
-    .action-btn { cursor: pointer !important; -webkit-tap-highlight-color: transparent; }
-  </style>
-</head>
-<body>
-  <div id="kialdevaro-community-hub">
-    <!-- HEADER -->
-    <div style="align-items: center; border-bottom: 1px solid rgb(34, 34, 34); display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; width: 100%;">
-      <div>
-        <h3 style="color: #00ffcc; font-size: 16px; font-weight: 700; margin: 0px 0px 2px;">🌐 K-Verse Media</h3>
-        <span style="color: #888888; font-size: 11px;">Media Digital Kialdevaro Group</span>
-      </div>
-      <a href="https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html" target="_blank" style="background: rgb(255, 85, 0); border-radius: 6px; color: white; font-size: 11px; font-weight: bold; padding: 6px 12px; text-decoration: none; white-space: nowrap;">Game Hub</a>
-    </div>
-
-    <!-- NAVIGASI TAB -->
-    <div style="display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; width: 100%;">
-      <button id="nav-feed" class="nav-tab-btn" data-tab="feed" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(0, 255, 204); color: #00ffcc; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Beranda</button>
-      <button id="nav-rank" class="nav-tab-btn" data-tab="rank" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 153, 0); color: #ff9900; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Papan Skor</button>
-      <button id="nav-profile" class="nav-tab-btn" data-tab="profile" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 193, 7); color: #ffc107; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Profil Saya</button>
-    </div>
-
-    <!-- 1. TAB BERANDA -->
-    <div id="view-feed" class="tab-view" style="display: flex;">
-      <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 12px; padding: 12px; width: 100%;">
-        <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 13px; height: 70px; margin-bottom: 8px; outline: none; padding: 8px; resize: none; width: 100%;"></textarea>
-        <div style="align-items: center; display: flex; justify-content: space-between; width: 100%;">
-          <input accept="image/*" id="post-file" style="display: none;" type="file" />
-          <button id="select-img-btn" class="action-btn" style="background: rgb(34, 34, 34); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: #00ffcc; font-size: 12px; padding: 6px 12px;">🖼 Pilih Foto</button>
-          <button id="submit-post-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 6px 16px;">Posting</button>
-        </div>
-        <div id="preview-box" style="display: none; height: 80px; margin-top: 8px; position: relative; width: 80px;">
-          <img id="preview-tag" src="" style="border-radius: 6px; height: 100%; object-fit: cover; width: 100%;" />
-          <button id="clear-img-btn" class="action-btn" style="background: rgb(255, 85, 0); border: none; border-radius: 50%; color: white; font-size: 10px; height: 22px; position: absolute; right: -5px; top: -5px; width: 22px;">X</button>
-        </div>
-      </div>
-
-    <!-- WADAH FEED -->
-    <div id="feed-box" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-        <p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Memuat linimasa...</p>
-    </div>
-  </div>
-
-    <!-- 2. TAB PAPAN SKOR -->
-    <div id="view-rank" class="tab-view" style="display: none;">
-      <h4 style="color: #ff9900; font-size: 14px; font-weight: 600; margin: 0px 0px 10px; width: 100%;">Papan Skor Global Anggota</h4>
-      <div id="rank-box" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-        <p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Memuat papan skor...</p>
-      </div>
-    </div>
-
-    <!-- 3. TAB PROFIL -->
-    <div id="view-profile" class="tab-view" style="display: none;">
-      <div style="align-items: center; background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); display: flex; justify-content: space-between; margin-bottom: 12px; padding: 12px; width: 100%;">
-        <div style="align-items: center; display: flex; gap: 10px; min-width: 0; flex: 1;">
-          <div id="avatar-trigger" class="action-btn" style="position: relative; flex-shrink: 0;" title="Ketuk ganti foto">
-            <img id="my-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" style="border-radius: 50%; border: 2px solid rgb(255, 193, 7); height: 50px; object-fit: cover; width: 50px;" />
-          </div>
-          <input accept="image/*" id="avatar-file-input" style="display: none;" type="file" />
-          <div style="min-width: 0; flex: 1;">
-            <h4 id="my-name" style="color: #ffc107; font-size: 14px; margin: 0px 0px 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Tamu (Belum Login)</h4>
-            <span id="my-id" style="color: #00ffcc; display: block; font-size: 11px; font-weight: bold;">ID: #KV-000000</span>
-            <span id="my-xp" style="color: #aaaaaa; font-size: 11px;">Total XP: 0</span>
-          </div>
-        </div>
-        <button id="auth-btn" class="action-btn" style="background: white; border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 7px 12px; flex-shrink: 0; margin-left: 8px;">Login</button>
-      </div>
-      <h4 style="color: #ffc107; font-size: 13px; margin: 0px 0px 8px; width: 100%;">Galeri Postingan Anda</h4>
-      <div id="my-gallery" style="display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); width: 100%; padding-bottom: 20px;"></div>
-    </div>
-  </div>
-    <!-- MODAL DETAIL -->
-  <div id="detail-modal" style="align-items: center; background: rgba(0,0,0,0.85); display: none; height: 100%; justify-content: center; left: 0px; padding: 12px; position: fixed; top: 0px; width: 100%; z-index: 99999;">
-    <div style="background: rgb(22, 22, 22); border-radius: 12px; border: 1px solid rgb(51,51,51); max-height: 85vh; max-width: 450px; overflow-y: auto; padding: 14px; position: relative; width: 100%;">
-      <button id="close-modal-btn" class="action-btn" style="background: rgb(255,85,0); border: none; border-radius: 50%; color: white; font-size: 12px; font-weight: bold; height: 28px; position: absolute; right: 10px; top: 10px; width: 28px;">X</button>
-      <div id="modal-img-box" style="background: black; border-radius: 6px; display: none; margin-bottom: 10px; text-align: center;"><img id="modal-img-tag" style="max-height: 220px; max-width: 100%; object-fit: contain;" /></div>
-      <p id="modal-text-tag" style="color: white; font-size: 13px; margin: 0px 0px 10px; word-break: break-word;"></p>
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding-bottom: 8px; margin-bottom: 8px;">
-        <button id="modal-like-btn" class="action-btn" style="background: rgba(255,153,0,0.15); border: 1px solid #ff9900; border-radius: 6px; color: #ff9900; font-size: 12px; font-weight: bold; padding: 5px 10px;">❤️ Suka (0)</button>
-        <button id="modal-del-btn" class="action-btn" style="background: rgba(255,85,0,0.2); border: 1px solid #ff5500; border-radius: 6px; color: #ff5500; display: none; font-size: 11px; font-weight: bold; padding: 5px 10px;">Hapus</button>
-      </div>
-      <div style="color: #aaa; font-size: 12px; font-weight: bold; margin-bottom: 4px;">Komentar:</div>
-      <div id="modal-comments-box" style="background: #131313; border-radius: 6px; display: flex; flex-direction: column; font-size: 12px; gap: 6px; max-height: 120px; overflow-y: auto; padding: 8px; margin-bottom: 10px;"></div>
-      <div style="display: flex; gap: 6px;">
-        <input id="modal-comment-input" placeholder="Tulis komentar..." style="background: #131313; border-radius: 6px; border: 1px solid #333; color: white; flex: 1; font-size: 12px; padding: 8px; outline: none;" type="text" />
-        <button id="modal-comment-submit-btn" class="action-btn" style="background: #00ffcc; border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 8px 12px;">Kirim</button>
-      </div>
-    </div>
-  </div>
-    <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -149,7 +29,7 @@
         id: 'ad-hub-02',
         author_name: 'Kialdevaro Games Hub 🌐 [SPONSORED]',
         author_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        text: '🕹️ Perpustakaan Game terbesar di dunia! Mainkan ribuan game gratis sepuasnya, top-up game aman, serta temukan afiliasi belanja barang terbaik (baju, fashion, elektronik, games, teknologi, dan lain-lain).',
+        text: '🕹️ Perpustakaan Game terbesar di dunia! Mainkan ribuan game gratis sepuasnya, top-up game aman, serta temukan afiliasi belanja barang terbaik.',
         image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80',
         link: 'https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html',
         likes: JSON.stringify(["1"]),
@@ -191,6 +71,7 @@
       return (user.email && user.email.toLowerCase().trim() === OWNER_EMAIL) || (user.friendId && user.friendId.trim() === OWNER_FRIEND_ID);
     }
 
+    // --- SISTEM NAVIGASI ANTI-CRASH ---
     window.KVerseUI = {
       switchTab: function(tab) {
         try {
@@ -199,16 +80,21 @@
             if(el) el.style.display = (t === tab) ? 'flex' : 'none';
           });
           localStorage.setItem('kverse_active_tab', tab);
-          if(tab === 'feed') renderFeed();
-          if(tab === 'rank') renderLeaderboard();
-          if(tab === 'profile') renderProfile();
+          
+          // Eksekusi fungsi secara terisolasi agar error di salah satu fitur tidak mematikan navigasi
+          if(tab === 'feed') { try { renderFeed(); } catch(e) { console.error("Feed err:", e); } }
+          if(tab === 'rank') { try { renderLeaderboard(); } catch(e) { console.error("Rank err:", e); } }
+          if(tab === 'profile') { try { renderProfile(); } catch(e) { console.error("Profile err:", e); } }
         } catch(err) {
           console.error("Tab switch error:", err);
         }
       },
       closeModal: function() {
-        document.getElementById('detail-modal').style.display = 'none';
-        activePost = null;
+        try {
+          const modal = document.getElementById('detail-modal');
+          if(modal) modal.style.display = 'none';
+          activePost = null;
+        } catch(e) { console.error(e); }
       }
     };
 
@@ -236,34 +122,41 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       try {
-        KVerseUI.switchTab(localStorage.getItem('kverse_active_tab') || 'feed');
+        const savedTab = localStorage.getItem('kverse_active_tab') || 'feed';
+        KVerseUI.switchTab(savedTab);
         
-        document.getElementById('post-file').addEventListener('change', ev => {
-          const file = ev.target.files[0];
-          if(!file) return;
-          const reader = new FileReader();
-          reader.onload = e => {
-            tempBase64 = e.target.result;
-            document.getElementById('preview-box').style.display = 'block';
-            document.getElementById('preview-tag').src = tempBase64;
-          };
-          reader.readAsDataURL(file);
-        });
+        const postFile = document.getElementById('post-file');
+        if(postFile) {
+          postFile.addEventListener('change', ev => {
+            const file = ev.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+              tempBase64 = e.target.result;
+              document.getElementById('preview-box').style.display = 'block';
+              document.getElementById('preview-tag').src = tempBase64;
+            };
+            reader.readAsDataURL(file);
+          });
+        }
 
-        document.getElementById('avatar-file-input').addEventListener('change', async ev => {
-          const file = ev.target.files[0];
-          if(!file || !currentUser) return;
-          const reader = new FileReader();
-          reader.onload = async e => {
-            const base64 = e.target.result;
-            currentUser.avatar = base64;
-            await supabase.from('kverse_users').update({ avatar: base64 }).eq('uid', currentUser.uid);
-            renderProfile();
-            renderLeaderboard();
-            alert("Foto profil diperbarui!");
-          };
-          reader.readAsDataURL(file);
-        });
+        const avatarInput = document.getElementById('avatar-file-input');
+        if(avatarInput) {
+          avatarInput.addEventListener('change', async ev => {
+            const file = ev.target.files[0];
+            if(!file || !currentUser) return;
+            const reader = new FileReader();
+            reader.onload = async e => {
+              const base64 = e.target.result;
+              currentUser.avatar = base64;
+              await supabase.from('kverse_users').update({ avatar: base64 }).eq('uid', currentUser.uid);
+              renderProfile();
+              renderLeaderboard();
+              alert("Foto profil diperbarui!");
+            };
+            reader.readAsDataURL(file);
+          });
+        }
       } catch(err) {
         console.error("DOM load error:", err);
       }
@@ -348,8 +241,9 @@
       if (!feedBox) return;
       try {
         let { data, error } = await supabase.from('kverse_posts').select('*').order('created_at', { ascending: false });
+        if(error) throw error;
         
-        let posts = (data && data.length > 0) ? data.filter(p => p.author_uid && !p.author_uid.startsWith('bot-')) : [];
+        let posts = (data && data.length > 0) ? data : [];
         
         let combinedPosts = [];
         posts.forEach((p, idx) => {
@@ -382,14 +276,12 @@
                 </div>
               </div>
               <p style="color: white; font-size: 13px; margin: 0 0 8px; word-break: break-word;">${p.text || ''}</p>
-          ${p.image ? `<div style="border-radius: 6px; margin-bottom: 8px; width: 100%;"><img src="${p.image}" style="width: 100%; height: auto; display: block; border-radius: 6px;" /></div>` : ''}
-          
+              ${p.image ? `<div style="border-radius: 6px; margin-bottom: 8px; width: 100%;"><img src="${p.image}" style="width: 100%; height: auto; display: block; border-radius: 6px;" /></div>` : ''}
               ${isAd && p.link ? `
                 <div style="margin-bottom: 8px;">
                   <a href="${p.link}" target="_blank" style="display: block; background: #ff5500; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; text-decoration: none;">🔗 Kunjungi & Mainkan Sekarang</a>
                 </div>
               ` : ''}
-
               <div style="display: flex; gap: 8px;">
                 <button class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(255,153,0,0.15); border: 1px solid #ff9900; border-radius: 6px; color: #ff9900; font-size: 11px; font-weight: bold; padding: 4px 10px;">❤️ Suka (${likes.length})</button>
                 <button class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(0,255,204,0.15); border: 1px solid #00ffcc; border-radius: 6px; color: #00ffcc; font-size: 11px; font-weight: bold; padding: 4px 10px;">💬 Komentar (${comments.length})</button>
@@ -398,9 +290,9 @@
           `;
         });
         feedBox.innerHTML = html;
-                  } catch(err) {
+      } catch(err) {
         console.error("Render feed error:", err);
-        feedBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Error: ${err.message || err}</p>`;
+        feedBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat linimasa: ${err.message || err}</p>`;
       }
     }
 
@@ -408,6 +300,8 @@
       const rankBox = document.getElementById('rank-box');
       if (!rankBox) return;
       try {
+        let { data, error } = await supabase.from('kverse_users').select('*').order('xp', { ascending: false }).limit(100);
+        if(error) throw error;
         
         if (!data || data.length === 0) {
           rankBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Belum ada data di papan skor.</p>';
@@ -439,7 +333,7 @@
         rankBox.innerHTML = html;
       } catch(err) {
         console.error("Render leaderboard error:", err);
-        rankBox.innerHTML = '<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat papan skor.</p>';
+        rankBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat papan skor. Pastikan tabel Supabase aktif.</p>`;
       }
     }
 
@@ -524,7 +418,8 @@
         alert("Gagal memposting.");
       }
     }
-          async function openDetail(id) {
+
+    async function openDetail(id) {
       try {
         activePost = cachedPosts.find(p => p.id == id);
         if(!activePost) return;
@@ -558,8 +453,9 @@
       } catch(err) {
         console.error("Open detail error:", err);
       }
-      }
-          async function pressLike() {
+    }
+
+    async function pressLike() {
       if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
       try {
         let likes = safeParseArray(activePost.likes);
@@ -600,8 +496,9 @@
       } catch(err) {
         console.error("Comment error:", err);
       }
-      }
-          async function pressDelete() {
+    }
+
+    async function pressDelete() {
       if(!activePost || activePost.is_ad || !confirm("Hapus postingan ini?")) return;
       try {
         await supabase.from('kverse_posts').delete().eq('id', activePost.id);
@@ -625,6 +522,3 @@
         alert("Gagal melakukan autentikasi.");
       }
     }
-  </script>
-</body>
-</html>
