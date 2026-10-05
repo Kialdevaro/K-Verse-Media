@@ -349,7 +349,7 @@
       try {
         let { data, error } = await supabase.from('kverse_posts').select('*').order('created_at', { ascending: false });
         
-        let posts = (data && data.length > 0) ? data : [];
+        let posts = (data && data.length > 0) ? data.filter(p => p.author_uid && !p.author_uid.startsWith('bot-')) : [];
         
         let combinedPosts = [];
         posts.forEach((p, idx) => {
