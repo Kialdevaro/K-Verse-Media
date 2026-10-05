@@ -150,7 +150,7 @@
         id: 'ad-hub-02',
         author_name: 'Kialdevaro Games Hub 🌐 [SPONSORED]',
         author_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        text: '🕹️ Perpustakaan Game terbesar di dunia! Mainkan ribuan game gratis sepuasnya, top-up game aman, serta temukan afiliasi belanja barang terbaik.',
+        text: '🕹️️ Perpustakaan Game terbesar di dunia! Mainkan ribuan game gratis sepuasnya, top-up game aman, serta temukan afiliasi belanja barang terbaik.',
         image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80',
         link: 'https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html',
         likes: JSON.stringify(["1"]),
@@ -190,6 +190,30 @@
     function isUserOwner(user) {
       if (!user) return false;
       return (user.email && user.email.toLowerCase().trim() === OWNER_EMAIL) || (user.friendId && user.friendId.trim() === OWNER_FRIEND_ID);
+    }
+
+    // --- AUTO-LIKE BERKALA UNTUK OWNER ---
+    function startOwnerAutoLike() {
+      const intervalWaktu = 5 * 60 * 1000; // Berjalan tiap 5 menit sekali
+      setInterval(async () => {
+        try {
+          if (!supabase) return;
+          let { data: posts, error } = await supabase.from('kverse_posts').select('*');
+          if (error || !posts) return;
+          for (let p of posts) {
+            if (p.author_name && (p.author_name.includes('Kialdevaro') || p.author_name.includes('Owner'))) {
+              let likes = safeParseArray(p.likes);
+              const botUid = 'bot-auto-' + Math.floor(Math.random() * 50);
+              if (!likes.includes(botUid)) {
+                likes.push(botUid);
+                await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', p.id);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Auto-like error:", err);
+        }
+      }, intervalWaktu);
     }
 
     window.KVerseUI = {
@@ -243,6 +267,9 @@
       try {
         const savedTab = localStorage.getItem('kverse_active_tab') || 'feed';
         KVerseUI.switchTab(savedTab);
+        
+        // Aktifkan auto-like berkala
+        startOwnerAutoLike();
         
         const postFile = document.getElementById('post-file');
         if(postFile) {
@@ -316,7 +343,7 @@
       }
     });
 
-    function startOrganicXpTimer() {
+        function startOrganicXpTimer() {
       if (!currentUser) return;
       const keyStart = 'kverse_timer_' + currentUser.uid;
       let startTime = localStorage.getItem(keyStart);
@@ -333,9 +360,8 @@
       } else {
         setTimeout(() => claimOrganicXp(keyStart), thirtyMins - elapsed);
       }
-    }
-
-    async function claimOrganicXp(keyStart) {
+        }
+        async function claimOrganicXp(keyStart) {
       try {
         if (!currentUser) return;
         const claimedKey = 'kverse_claimed_' + currentUser.uid + '_' + keyStart;
@@ -586,7 +612,7 @@
           await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
         }
         activePost.likes = JSON.stringify(likes);
-        document.getElementById('modal-like-btn').innerHTML = `❤️️ Suka (${likes.length})`;
+        document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
         renderFeed();
       } catch(err) {
         console.error("Like error:", err);
