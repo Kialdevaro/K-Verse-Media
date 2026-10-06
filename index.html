@@ -115,7 +115,7 @@
       </div>
     </div>
   </div>
-    <script type="module">
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -131,18 +131,16 @@
     const OWNER_EMAIL = "akunwildrift2020@gmail.com";
     const OWNER_FRIEND_ID = "KV-230901";
 
-    // --- 3 MODEL IKLAN (ADSTERRA, KIALDEVARO GAMING, KIALDEVARO GAME) ---
+    // --- 3 MODEL IKLAN (ADSTERRA BANNER, KIALDEVARO GAMING, KIALDEVARO GAME) ---
     const professionalAds = [
       {
-        id: 'ad-adsterra-01',
-        author_name: 'Adstera Partner Network 🌟 [SPONSORED]',
+        id: 'ad-adsterra-banner',
+        author_name: 'Adsterra Network 🌟 [SPONSORED]',
         author_avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
-        text: '🌟 Temukan penawaran menarik, layanan digital eksklusif, dan produk sponsor pilihan terbaik hari ini melalui jaringan partner Adsterra.',
-        image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80',
-        link: 'https://kialdevaro-gamingid.blogspot.com',
-        likes: JSON.stringify(["1", "2"]),
-        comments: JSON.stringify([{ name: "Admin", text: "Partner iklan resmi terpercaya!" }]),
-        is_ad: true
+        text: '🌟 Sponsor Partner Eksklusif Jaringan Adsterra.',
+        is_adsterra: true,
+        likes: JSON.stringify(["1"]),
+        comments: JSON.stringify([{ name: "Admin", text: "Official partner ad." }])
       },
       {
         id: 'ad-gaming-02',
@@ -151,9 +149,9 @@
         text: '🎮 Ekosistem Arsip Game terbesar Di Indonesia! Jelajahi koleksi game lengkap, review karakter mendalam, statistik, dan tips bermain terbaik.',
         image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgLf2rCZVx_ol4P8wRpft5U6kKUbOpA7KwYEZ_8oE-YIXdrT0PSEHweo3VbRlvzfI3iqmix_mD6SiFYB19K0x0uFUaasY9Zi8RrsciKvQG0JreQp0CPMIWgPz0KsDqQ9x4CuctDAvwQ7_kuTMo0PXhuj0RdXtGB-Li0yYRLBJ0WRDeHhPs90CDy_l-uRKc/s3264/20251231_201401.jpg',
         link: 'https://kialdevaro-gamingid.blogspot.com/p/kialdevaro-gaming.html',
+        is_ad: true,
         likes: JSON.stringify(["1"]),
-        comments: JSON.stringify([{ name: "GamerID", text: "Arsip gamenya super lengkap!" }]),
-        is_ad: true
+        comments: JSON.stringify([{ name: "GamerID", text: "Arsip gamenya super lengkap!" }])
       },
       {
         id: 'ad-hub-03',
@@ -162,9 +160,9 @@
         text: '🕹 Perpustakaan Game terbesar Di dunia! Mainkan ribuan game HTML5 seru serta emulator klasik langsung di browser tanpa perlu download.',
         image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhNQqxdCNlyE9iAXSkG_9L6ukGtfXUpRyd6hTOxN6GUGhUOi7WQwdpIdCUr4EA_kSLWp_VuzuIqFSq8wP1dE6YBMnEr9IwCL0f3oDfEPZaudn0jQ3GagHUB_akHI3Fu5DBveCalclSRBpCGyp5ONdjnoilVlskggPxJnQgunisC9P_GNGAkAby_MRs4t2I/s3264/1000319172.png',
         link: 'https://kialdevarogamesid.blogspot.com/p/kialdevaro-game_01127593984.html',
-        likes: JSON.stringify(["1", "2", "3"]),
-        comments: JSON.stringify([{ name: "Rider", text: "Tempat nongkrong gamer paling mantap!" }]),
-        is_ad: true
+        is_ad: true,
+        likes: JSON.stringify(["1", "2"]),
+        comments: JSON.stringify([{ name: "Rider", text: "Tempat nongkrong gamer paling mantap!" }])
       }
     ];
 
@@ -248,7 +246,18 @@
         } catch(e) { console.error(e); }
       }
     };
-          document.addEventListener('click', e => {
+        // Injeksi Global Social Bar Adsterra
+    function injectSocialBar() {
+      try {
+        const script = document.createElement('script');
+        script.src = "https://pl31662254.profitableratecpmnetwork.com/1b/27/aa/1b27aafebf02c9db2b3e10e56229d3c1.js";
+        document.body.appendChild(script);
+      } catch(e) {
+        console.error("Social bar error:", e);
+      }
+    }
+
+    document.addEventListener('click', e => {
       try {
         const tabBtn = e.target.closest('.nav-tab-btn');
         if(tabBtn) { KVerseUI.switchTab(tabBtn.getAttribute('data-tab')); return; }
@@ -276,6 +285,7 @@
         KVerseUI.switchTab(savedTab);
         
         startOwnerAutoLike();
+        injectSocialBar(); // Jalankan Sosial Bar Adsterra
         
         const postFile = document.getElementById('post-file');
         if(postFile) {
@@ -387,8 +397,8 @@
       } catch(err) {
         console.error("Claim XP error:", err);
       }
-      }
-          async function renderFeed() {
+    }
+        async function renderFeed() {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox) return;
       try {
@@ -398,6 +408,7 @@
         let posts = (data && data.length > 0) ? data : [];
         let combinedPosts = [];
         
+        // Setiap kelipatan 30 postingan (bot/organik), munculkan 1 iklan secara acak dari 3 model iklan
         posts.forEach((p, idx) => {
           combinedPosts.push(p);
           if ((idx + 1) % 30 === 0) {
@@ -406,7 +417,7 @@
           }
         });
 
-        if (combinedPosts.length === 0 || !combinedPosts.some(p => p.is_ad)) {
+        if (combinedPosts.length === 0 || !combinedPosts.some(p => p.is_ad || p.is_adsterra)) {
           const randomAd = professionalAds[Math.floor(Math.random() * professionalAds.length)];
           combinedPosts.unshift({ ...randomAd, id: 'ad-default-' + Math.random().toString(36).substr(2, 9) });
         }
@@ -417,7 +428,7 @@
         combinedPosts.forEach(p => {
           const likes = safeParseArray(p.likes);
           const comments = safeParseArray(p.comments);
-          const isAd = p.is_ad;
+          const isAd = p.is_ad || p.is_adsterra;
 
           html += `
             <div style="background: ${isAd ? 'rgb(24, 18, 10)' : '#161616'}; border-radius: 10px; border: 1px solid ${isAd ? '#ff9900' : '#262626'}; padding: 12px; width: 100%;">
@@ -429,12 +440,21 @@
                 </div>
               </div>
               <p style="color: white; font-size: 13px; margin: 0 0 8px; word-break: break-word;">${p.text || ''}</p>
+              
+              ${p.is_adsterra ? `
+                <div class="adsterra-banner-slot" style="margin: 8px 0; text-align: center; background: black; border-radius: 6px; padding: 10px; min-height: 50px;">
+                  <div id="container-60b01d240fed7ec65a8fd993a9e50801"></div>
+                </div>
+              ` : ''}
+
               ${p.image ? `<div style="border-radius: 6px; margin-bottom: 8px; width: 100%;"><img src="${p.image}" style="width: 100%; height: auto; display: block; border-radius: 6px;" /></div>` : ''}
+              
               ${isAd && p.link ? `
                 <div style="margin-bottom: 8px;">
                   <a href="${p.link}" target="_blank" style="display: block; background: #ff5500; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; text-decoration: none;">🔗 Kunjungi & Mainkan Sekarang</a>
                 </div>
               ` : ''}
+              
               <div style="display: flex; gap: 8px;">
                 <button class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(255,153,0,0.15); border: 1px solid #ff9900; border-radius: 6px; color: #ff9900; font-size: 11px; font-weight: bold; padding: 4px 10px;">❤️ Suka (${likes.length})</button>
                 <button class="action-btn open-post-btn" data-id="${p.id}" style="background: rgba(0,255,204,0.15); border: 1px solid #00ffcc; border-radius: 6px; color: #00ffcc; font-size: 11px; font-weight: bold; padding: 4px 10px;">💬 Komentar (${comments.length})</button>
@@ -443,6 +463,18 @@
           `;
         });
         feedBox.innerHTML = html;
+
+        // Injeksi skrip banner Adsterra agar terpanggil dengan benar di dalam feed
+        document.querySelectorAll('.adsterra-banner-slot').forEach(slot => {
+          if (!slot.querySelector('script')) {
+            const script = document.createElement('script');
+            script.async = true;
+            script.setAttribute('data-cfasync', 'false');
+            script.src = "https://pl31662253.profitableratecpmnetwork.com/60b01d240fed7ec65a8fd993a9e50801/invoke.js";
+            slot.appendChild(script);
+          }
+        });
+
       } catch(err) {
         console.error("Render feed error:", err);
         feedBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat linimasa: ${err.message || err}</p>`;
@@ -590,7 +622,7 @@
         document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
 
         const delBtn = document.getElementById('modal-del-btn');
-        if(currentUser && (currentUser.uid === activePost.author_uid || isUserOwner(currentUser)) && !activePost.is_ad) {
+        if(currentUser && (currentUser.uid === activePost.author_uid || isUserOwner(currentUser)) && !activePost.is_ad && !activePost.is_adsterra) {
           delBtn.style.display = 'block';
         } else {
           delBtn.style.display = 'none';
@@ -616,7 +648,7 @@
         if(idx > -1) likes.splice(idx, 1);
         else likes.push(currentUser.uid);
 
-        if(!activePost.is_ad) {
+        if(!activePost.is_ad && !activePost.is_adsterra) {
           await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
         }
         activePost.likes = JSON.stringify(likes);
@@ -636,7 +668,7 @@
       try {
         let comments = safeParseArray(activePost.comments);
         comments.push({ name: currentUser.name, text: text });
-        if(!activePost.is_ad) {
+        if(!activePost.is_ad && !activePost.is_adsterra) {
           await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
         }
         activePost.comments = JSON.stringify(comments);
@@ -652,7 +684,7 @@
     }
 
     async function pressDelete() {
-      if(!activePost || activePost.is_ad || !confirm("Hapus postingan ini?")) return;
+      if(!activePost || activePost.is_ad || activePost.is_adsterra || !confirm("Hapus postingan ini?")) return;
       try {
         await supabase.from('kverse_posts').delete().eq('id', activePost.id);
         KVerseUI.closeModal();
