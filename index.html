@@ -128,6 +128,12 @@
     let auth = null;
     let provider = null;
 
+    // Variabel Infinite Scroll
+    let feedPage = 0;
+    const feedLimit = 10;
+    let isLoadingFeed = false;
+    let hasMoreFeed = true;
+
     const OWNER_EMAIL = "akunwildrift2020@gmail.com";
     const OWNER_FRIEND_ID = "KV-230901";
 
@@ -135,7 +141,7 @@
     const professionalAds = [
       {
         id: 'ad-adsterra-banner',
-        author_name: 'Adsterra Network 🌟 [SPONSORED]',
+        author_name: 'Adstera Partner Network 🌟 [SPONSORED]',
         author_avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
         text: '🌟 Sponsor Partner Eksklusif Jaringan Adsterra.',
         is_adsterra: true,
@@ -246,18 +252,7 @@
         } catch(e) { console.error(e); }
       }
     };
-        // Injeksi Global Social Bar Adsterra
-    function injectSocialBar() {
-      try {
-        const script = document.createElement('script');
-        script.src = "https://pl31662254.profitableratecpmnetwork.com/1b/27/aa/1b27aafebf02c9db2b3e10e56229d3c1.js";
-        document.body.appendChild(script);
-      } catch(e) {
-        console.error("Social bar error:", e);
-      }
-    }
-
-    document.addEventListener('click', e => {
+        document.addEventListener('click', e => {
       try {
         const tabBtn = e.target.closest('.nav-tab-btn');
         if(tabBtn) { KVerseUI.switchTab(tabBtn.getAttribute('data-tab')); return; }
@@ -285,7 +280,6 @@
         KVerseUI.switchTab(savedTab);
         
         startOwnerAutoLike();
-        injectSocialBar(); // Jalankan Sosial Bar Adsterra
         
         const postFile = document.getElementById('post-file');
         if(postFile) {
@@ -321,6 +315,16 @@
         }
       } catch(err) {
         console.error("DOM load error:", err);
+      }
+    });
+
+    // Pemantau Scroll untuk Infinite Loading Beranda
+    window.addEventListener('scroll', () => {
+      const activeTab = localStorage.getItem('kverse_active_tab') || 'feed';
+      if (activeTab === 'feed' && !isLoadingFeed && hasMoreFeed) {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+          renderFeed(true);
+        }
       }
     });
 
@@ -398,40 +402,75 @@
         console.error("Claim XP error:", err);
       }
     }
-        async function renderFeed() {
+        async function renderFeed(isAppend = false) {
       const feedBox = document.getElementById('feed-box');
-      if (!feedBox) return;
+      if (!feedBox || isLoadingFeed) return;
+      
+      if (!isAppend) {
+        feedPage = 0;
+        hasMoreFeed = true;
+        feedBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Memuat linimasa...</p>';
+      } else if (!hasMoreFeed) {
+        return;
+      }
+
+      isLoadingFeed = true;
+
       try {
-        let { data, error } = await supabase.from('kverse_posts').select('*').order('created_at', { ascending: false });
+        const from = feedPage * feedLimit;
+        const to = from + feedLimit - 1;
+
+        let { data, error } = await supabase
+          .from('kverse_posts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
         if(error) throw error;
         
         let posts = (data && data.length > 0) ? data : [];
-        let combinedPosts = [];
         
-        // Setiap kelipatan 30 postingan (bot/organik), munculkan 1 iklan secara acak dari 3 model iklan
+        if (posts.length < feedLimit) {
+          hasMoreFeed = false;
+        }
+
+        let combinedPosts = [];
         posts.forEach((p, idx) => {
           combinedPosts.push(p);
-          if ((idx + 1) % 30 === 0) {
+          // Munculkan iklan secara random dari 3 model setiap kelipatan 30 postingan
+          if ((from + idx + 1) % 30 === 0) {
             const randomAd = professionalAds[Math.floor(Math.random() * professionalAds.length)];
             combinedPosts.push({ ...randomAd, id: 'ad-gen-' + Math.random().toString(36).substr(2, 9) });
           }
         });
 
-        if (combinedPosts.length === 0 || !combinedPosts.some(p => p.is_ad || p.is_adsterra)) {
+        if (!isAppend && combinedPosts.length === 0) {
           const randomAd = professionalAds[Math.floor(Math.random() * professionalAds.length)];
           combinedPosts.unshift({ ...randomAd, id: 'ad-default-' + Math.random().toString(36).substr(2, 9) });
         }
 
-        cachedPosts = combinedPosts;
+        if (isAppend) {
+          cachedPosts = cachedPosts.concat(combinedPosts);
+        } else {
+          cachedPosts = combinedPosts;
+        }
 
-        let html = '';
+        let html = isAppend ? feedBox.innerHTML : '';
+        if (!isAppend && combinedPosts.length === 0) {
+          feedBox.innerHTML = '<p style="color: #777; font-size: 13px; text-align: center; padding: 20px;">Belum ada postingan di beranda.</p>';
+          isLoadingFeed = false;
+          return;
+        }
+
+        if (!isAppend) html = '';
+
         combinedPosts.forEach(p => {
           const likes = safeParseArray(p.likes);
           const comments = safeParseArray(p.comments);
           const isAd = p.is_ad || p.is_adsterra;
 
           html += `
-            <div style="background: ${isAd ? 'rgb(24, 18, 10)' : '#161616'}; border-radius: 10px; border: 1px solid ${isAd ? '#ff9900' : '#262626'}; padding: 12px; width: 100%;">
+            <div style="background: ${isAd ? 'rgb(24, 18, 10)' : '#161616'}; border-radius: 10px; border: 1px solid ${isAd ? '#ff9900' : '#262626'}; padding: 12px; width: 100%; margin-bottom: 12px;">
               <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
                 <img src="${p.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
                 <div>
@@ -462,9 +501,11 @@
             </div>
           `;
         });
+        
         feedBox.innerHTML = html;
+        feedPage++;
 
-        // Injeksi skrip banner Adsterra agar terpanggil dengan benar di dalam feed
+        // Injeksi skrip banner Adsterra ke dalam feed
         document.querySelectorAll('.adsterra-banner-slot').forEach(slot => {
           if (!slot.querySelector('script')) {
             const script = document.createElement('script');
@@ -477,7 +518,8 @@
 
       } catch(err) {
         console.error("Render feed error:", err);
-        feedBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat linimasa: ${err.message || err}</p>`;
+      } finally {
+        isLoadingFeed = false;
       }
     }
 
