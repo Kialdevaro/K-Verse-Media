@@ -48,7 +48,6 @@
       <button id="nav-rank" class="nav-tab-btn" data-tab="rank" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 153, 0); color: #ff9900; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Papan Skor</button>
       <button id="nav-profile" class="nav-tab-btn" data-tab="profile" style="background: rgb(24, 24, 24); border-radius: 8px; border: 1px solid rgb(255, 193, 7); color: #ffc107; cursor: pointer; font-size: 12px; font-weight: bold; padding: 8px 4px; text-align: center;">Profil Saya</button>
     </div>
-
     <!-- 1. TAB BERANDA -->
     <div id="view-feed" class="tab-view" style="display: flex;">
       <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 12px; padding: 12px; width: 100%;">
@@ -115,7 +114,7 @@
       </div>
     </div>
   </div>
-  <script type="module">
+    <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -123,12 +122,11 @@
     let currentUser = null;
     let cachedPosts = [];
     let activePost = null;
-    let tempBase64 = null;
+    let selectedImageFile = null;
     let supabase = null;
     let auth = null;
     let provider = null;
 
-    // Variabel Infinite Scroll
     let feedPage = 0;
     const feedLimit = 10;
     let isLoadingFeed = false;
@@ -137,7 +135,6 @@
     const OWNER_EMAIL = "akunwildrift2020@gmail.com";
     const OWNER_FRIEND_ID = "KV-230901";
 
-    // --- 3 MODEL IKLAN (ADSTERRA BANNER, KIALDEVARO GAMING, KIALDEVARO GAME) ---
     const professionalAds = [
       {
         id: 'ad-adsterra-banner',
@@ -194,6 +191,12 @@
     });
 
     function formatNum(num) { return new Intl.NumberFormat('id-ID').format(num || 0); }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
     function safeParseArray(val) {
       if (!val) return [];
       if (Array.isArray(val)) return val;
@@ -203,6 +206,47 @@
     function isUserOwner(user) {
       if (!user) return false;
       return (user.email && user.email.toLowerCase().trim() === OWNER_EMAIL) || (user.friendId && user.friendId.trim() === OWNER_FRIEND_ID);
+    }
+
+    async function checkUserPhotoCount(uid) {
+      try {
+        const { count, error } = await supabase
+          .from('kverse_posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('author_uid', uid)
+          .not('image', 'is', null)
+          .neq('image', '');
+        if (error) throw error;
+        return count || 0;
+      } catch (err) {
+        console.error("Gagal mengecek kuota foto:", err);
+        return 0;
+      }
+    }
+
+    async function uploadToSupabaseStorage(file, folder = 'posts') {
+      if (!file) return '';
+      if (currentUser && !isUserOwner(currentUser)) {
+        const uploadedCount = await checkUserPhotoCount(currentUser.uid);
+        if (uploadedCount >= 50) {
+          throw new Error("Batas maksimal jatah 50 foto untuk akun Anda telah tercapai!");
+        }
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}_${currentUser.uid}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('Photos')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('Photos')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
     }
 
     function startOwnerAutoLike() {
@@ -228,7 +272,40 @@
       }, intervalWaktu);
     }
 
-    window.KVerseUI = {
+    // Bot Papan Skor: Tambah 50-200 XP setiap 24 jam (Kecuali Owner)
+    function startLeaderboardBot() {
+      const checkInterval = 60 * 1000; 
+      setInterval(async () => {
+        try {
+          if (!supabase) return;
+          const lastUpdateKey = 'kverse_last_lb_bot_update';
+          const lastUpdate = localStorage.getItem(lastUpdateKey);
+          const now = Date.now();
+          const twentyFourHours = 24 * 60 * 60 * 1000;
+
+          if (!lastUpdate || (now - parseInt(lastUpdate)) >= twentyFourHours) {
+            let { data: users, error } = await supabase.from('kverse_users').select('*');
+            if (error || !users || users.length === 0) return;
+
+            for (let u of users) {
+              if (u.email === OWNER_EMAIL || u.friendId === OWNER_FRIEND_ID) continue;
+              const addedXp = Math.floor(Math.random() * 151) + 50; 
+              const newXp = (u.xp || 0) + addedXp;
+              await supabase.from('kverse_users').update({ xp: newXp }).eq('uid', u.uid);
+            }
+
+            localStorage.setItem(lastUpdateKey, now.toString());
+            const activeTab = localStorage.getItem('kverse_active_tab');
+            if (activeTab === 'rank') {
+              renderLeaderboard();
+            }
+          }
+        } catch (err) {
+          console.error("Leaderboard bot error:", err);
+        }
+      }, checkInterval);
+    }
+          window.KVerseUI = {
       switchTab: function(tab) {
         try {
           ['feed', 'rank', 'profile'].forEach(t => {
@@ -252,7 +329,8 @@
         } catch(e) { console.error(e); }
       }
     };
-        document.addEventListener('click', e => {
+
+    document.addEventListener('click', e => {
       try {
         const tabBtn = e.target.closest('.nav-tab-btn');
         if(tabBtn) { KVerseUI.switchTab(tabBtn.getAttribute('data-tab')); return; }
@@ -261,7 +339,12 @@
         if(openBtn) { openDetail(openBtn.getAttribute('data-id')); return; }
 
         if(e.target.closest('#select-img-btn')) { document.getElementById('post-file').click(); return; }
-        if(e.target.closest('#clear-img-btn')) { tempBase64 = null; document.getElementById('preview-box').style.display = 'none'; document.getElementById('post-file').value = ''; return; }
+        if(e.target.closest('#clear-img-btn')) { 
+          selectedImageFile = null; 
+          document.getElementById('preview-box').style.display = 'none'; 
+          document.getElementById('post-file').value = ''; 
+          return; 
+        }
         if(e.target.closest('#submit-post-btn')) { submitPost(); return; }
         if(e.target.closest('#auth-btn')) { toggleAuth(); return; }
         if(e.target.closest('#close-modal-btn')) { KVerseUI.closeModal(); return; }
@@ -280,19 +363,18 @@
         KVerseUI.switchTab(savedTab);
         
         startOwnerAutoLike();
+        startLeaderboardBot();
+        initRealtimeSubscription();
         
         const postFile = document.getElementById('post-file');
         if(postFile) {
           postFile.addEventListener('change', ev => {
             const file = ev.target.files[0];
             if(!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-              tempBase64 = e.target.result;
-              document.getElementById('preview-box').style.display = 'block';
-              document.getElementById('preview-tag').src = tempBase64;
-            };
-            reader.readAsDataURL(file);
+            selectedImageFile = file;
+            const previewUrl = URL.createObjectURL(file);
+            document.getElementById('preview-box').style.display = 'block';
+            document.getElementById('preview-tag').src = previewUrl;
           });
         }
 
@@ -301,16 +383,17 @@
           avatarInput.addEventListener('change', async ev => {
             const file = ev.target.files[0];
             if(!file || !currentUser) return;
-            const reader = new FileReader();
-            reader.onload = async e => {
-              const base64 = e.target.result;
-              currentUser.avatar = base64;
-              await supabase.from('kverse_users').update({ avatar: base64 }).eq('uid', currentUser.uid);
+            try {
+              const avatarUrl = await uploadToSupabaseStorage(file, 'avatars');
+              currentUser.avatar = avatarUrl;
+              await supabase.from('kverse_users').update({ avatar: avatarUrl }).eq('uid', currentUser.uid);
               renderProfile();
               renderLeaderboard();
               alert("Foto profil diperbarui!");
-            };
-            reader.readAsDataURL(file);
+            } catch(err) {
+              console.error("Avatar error:", err);
+              alert(err.message || "Gagal memperbarui foto profil.");
+            }
           });
         }
       } catch(err) {
@@ -318,7 +401,26 @@
       }
     });
 
-    // Pemantau Scroll untuk Infinite Loading Beranda
+    function initRealtimeSubscription() {
+      try {
+        supabase
+          .channel('public:kverse_posts')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'kverse_posts' }, payload => {
+            const activeTab = localStorage.getItem('kverse_active_tab') || 'feed';
+            if (activeTab === 'feed') {
+              renderFeed(false);
+            }
+            if (activePost && payload.new && payload.new.id === activePost.id) {
+              activePost = payload.new;
+              openDetail(activePost.id);
+            }
+          })
+          .subscribe();
+      } catch (err) {
+        console.error("Realtime subscription error:", err);
+      }
+    }
+
     window.addEventListener('scroll', () => {
       const activeTab = localStorage.getItem('kverse_active_tab') || 'feed';
       if (activeTab === 'feed' && !isLoadingFeed && hasMoreFeed) {
@@ -385,24 +487,22 @@
     async function claimOrganicXp() {
       try {
         if (!currentUser) return;
-
         const randomXp = Math.floor(Math.random() * 21) + 30; 
         currentUser.xp = (currentUser.xp || 0) + randomXp;
 
         await supabase.from('kverse_users').update({ xp: currentUser.xp }).eq('uid', currentUser.uid);
-        
         localStorage.setItem('kverse_timer_' + currentUser.uid, Date.now().toString());
         
         renderProfile();
         renderLeaderboard();
         alert(`🎉 Selamat! Anda aktif di web selama 30 menit dan mendapatkan +${randomXp} XP!`);
-        
         startOrganicXpTimer();
       } catch(err) {
         console.error("Claim XP error:", err);
       }
     }
-        async function renderFeed(isAppend = false) {
+
+    async function renderFeed(isAppend = false) {
       const feedBox = document.getElementById('feed-box');
       if (!feedBox || isLoadingFeed) return;
       
@@ -429,7 +529,6 @@
         if(error) throw error;
         
         let posts = (data && data.length > 0) ? data : [];
-        
         if (posts.length < feedLimit) {
           hasMoreFeed = false;
         }
@@ -437,7 +536,6 @@
         let combinedPosts = [];
         posts.forEach((p, idx) => {
           combinedPosts.push(p);
-          // Munculkan iklan secara random dari 3 model setiap kelipatan 30 postingan
           if ((from + idx + 1) % 30 === 0) {
             const randomAd = professionalAds[Math.floor(Math.random() * professionalAds.length)];
             combinedPosts.push({ ...randomAd, id: 'ad-gen-' + Math.random().toString(36).substr(2, 9) });
@@ -464,33 +562,34 @@
 
         if (!isAppend) html = '';
 
-        combinedPosts.forEach(p => {
+        combinedPosts.forEach((p) => {
           const likes = safeParseArray(p.likes);
           const comments = safeParseArray(p.comments);
           const isAd = p.is_ad || p.is_adsterra;
+          const uniqueAdContainerId = 'ad-container-' + Math.random().toString(36).substr(2, 9);
 
           html += `
             <div style="background: ${isAd ? 'rgb(24, 18, 10)' : '#161616'}; border-radius: 10px; border: 1px solid ${isAd ? '#ff9900' : '#262626'}; padding: 12px; width: 100%; margin-bottom: 12px;">
               <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                <img src="${p.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
+                <img src="${escapeHtml(p.author_avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png')}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
                 <div>
-                  <div style="color: ${isAd ? '#ff9900' : '#00ffcc'}; font-size: 12px; font-weight: bold;">${p.author_name}</div>
+                  <div style="color: ${isAd ? '#ff9900' : '#00ffcc'}; font-size: 12px; font-weight: bold;">${escapeHtml(p.author_name)}</div>
                   <div style="color: #777; font-size: 10px;">${p.created_at ? new Date(p.created_at).toLocaleString('id-ID') : 'Postingan Resmi'}</div>
                 </div>
               </div>
-              <p style="color: white; font-size: 13px; margin: 0 0 8px; word-break: break-word;">${p.text || ''}</p>
+              <p style="color: white; font-size: 13px; margin: 0 0 8px; word-break: break-word;">${escapeHtml(p.text || '')}</p>
               
               ${p.is_adsterra ? `
                 <div class="adsterra-banner-slot" style="margin: 8px 0; text-align: center; background: black; border-radius: 6px; padding: 10px; min-height: 50px;">
-                  <div id="container-60b01d240fed7ec65a8fd993a9e50801"></div>
+                  <div id="${uniqueAdContainerId}"></div>
                 </div>
               ` : ''}
 
-              ${p.image ? `<div style="border-radius: 6px; margin-bottom: 8px; width: 100%;"><img src="${p.image}" style="width: 100%; height: auto; display: block; border-radius: 6px;" /></div>` : ''}
+              ${p.image ? `<div style="border-radius: 6px; margin-bottom: 8px; width: 100%;"><img src="${escapeHtml(p.image)}" style="width: 100%; height: auto; display: block; border-radius: 6px;" /></div>` : ''}
               
               ${isAd && p.link ? `
                 <div style="margin-bottom: 8px;">
-                  <a href="${p.link}" target="_blank" style="display: block; background: #ff5500; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; text-decoration: none;">🔗 Kunjungi & Mainkan Sekarang</a>
+                  <a href="${escapeHtml(p.link)}" target="_blank" style="display: block; background: #ff5500; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; text-decoration: none;">🔗 Kunjungi & Mainkan Sekarang</a>
                 </div>
               ` : ''}
               
@@ -505,14 +604,14 @@
         feedBox.innerHTML = html;
         feedPage++;
 
-        // Injeksi skrip banner Adsterra ke dalam feed
         document.querySelectorAll('.adsterra-banner-slot').forEach(slot => {
-          if (!slot.querySelector('script')) {
+          const targetDiv = slot.querySelector('div');
+          if (targetDiv && !targetDiv.querySelector('script')) {
             const script = document.createElement('script');
             script.async = true;
             script.setAttribute('data-cfasync', 'false');
             script.src = "https://pl31662253.profitableratecpmnetwork.com/60b01d240fed7ec65a8fd993a9e50801/invoke.js";
-            slot.appendChild(script);
+            targetDiv.appendChild(script);
           }
         });
 
@@ -547,10 +646,10 @@
             <div style="align-items: center; background: #161616; border-radius: 8px; border: 1px solid #262626; display: flex; justify-content: space-between; padding: 8px 12px; width: 100%;">
               <div style="align-items: center; display: flex; gap: 10px;">
                 <span style="color: ${color}; font-size: 13px; font-weight: bold; width: 24px; text-align: center;">${badge}</span>
-                <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png'}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
+                <img src="${escapeHtml(u.avatar || 'https://cdn-icons-png.flaticon.com/512/147/147144.png')}" style="border-radius: 50%; height: 32px; width: 32px; object-fit: cover;" />
                 <div>
-                  <div style="color: white; font-size: 12px; font-weight: bold;">${u.name}</div>
-                  <div style="color: #00ffcc; font-size: 10px;">ID: #${u.friendId || 'KV-000000'}</div>
+                  <div style="color: white; font-size: 12px; font-weight: bold;">${escapeHtml(u.name)}</div>
+                  <div style="color: #00ffcc; font-size: 10px;">ID: #${escapeHtml(u.friendId || 'KV-000000')}</div>
                 </div>
               </div>
               <span style="color: #ff9900; font-size: 12px; font-weight: bold;">${formatNum(u.xp)} XP</span>
@@ -560,7 +659,6 @@
         rankBox.innerHTML = html;
       } catch(err) {
         console.error("Render leaderboard error:", err);
-        rankBox.innerHTML = `<p style="color: #ff5500; font-size: 13px; text-align: center; padding: 20px;">Gagal memuat papan skor. Pastikan RLS Supabase sudah aktif.</p>`;
       }
     }
 
@@ -607,7 +705,7 @@
         let html = '';
         data.forEach(p => {
           if(p.image) {
-            html += `<div class="action-btn open-post-btn" data-id="${p.id}" style="aspect-ratio: 1; background: black; border-radius: 6px; overflow: hidden;"><img src="${p.image}" style="height: 100%; width: 100%; object-fit: cover;" /></div>`;
+            html += `<div class="action-btn open-post-btn" data-id="${p.id}" style="aspect-ratio: 1; background: black; border-radius: 6px; overflow: hidden;"><img src="${escapeHtml(p.image)}" style="height: 100%; width: 100%; object-fit: cover;" /></div>`;
           }
         });
         galleryBox.innerHTML = html || '<span style="color: #777; font-size: 12px; grid-column: span 3; text-align: center;">Belum ada foto.</span>';
@@ -620,29 +718,33 @@
       if (!currentUser) { alert("Silakan Login terlebih dahulu!"); KVerseUI.switchTab('profile'); return; }
       const textEl = document.getElementById('post-text');
       const text = textEl ? textEl.value.trim() : '';
-      const image = tempBase64 || '';
-      if (!text && !image) { alert("Tulis sesuatu atau pilih foto."); return; }
+      if (!text && !selectedImageFile) { alert("Tulis sesuatu atau pilih foto."); return; }
 
       try {
+        let imageUrl = '';
+        if (selectedImageFile) {
+          imageUrl = await uploadToSupabaseStorage(selectedImageFile, 'posts');
+        }
+
         await supabase.from('kverse_posts').insert([{
           author_uid: currentUser.uid,
           author_name: currentUser.name,
           author_avatar: currentUser.avatar,
           text: text,
-          image: image,
+          image: imageUrl,
           likes: JSON.stringify([]),
           comments: JSON.stringify([])
         }]);
 
         if(textEl) textEl.value = '';
-        tempBase64 = null;
+        selectedImageFile = null;
         const previewBox = document.getElementById('preview-box');
         if(previewBox) previewBox.style.display = 'none';
         renderFeed();
         alert("Berhasil memposting!");
       } catch(err) {
         console.error("Submit post error:", err);
-        alert("Gagal memposting.");
+        alert(err.message || "Gagal memposting.");
       }
     }
 
@@ -670,85 +772,85 @@
           delBtn.style.display = 'none';
         }
 
-        const comments = safeParseArray(activePost.comments);
-        let cHtml = '';
-        if(comments.length === 0) cHtml = '<span style="color: #777;">Belum ada komentar.</span>';
-        else comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> ${c.text}</div>`);
-        document.getElementById('modal-comments-box').innerHTML = cHtml;
+            const comments = safeParseArray(activePost.comments);
+    let cHtml = '';
+    if(comments.length === 0) cHtml = '<span style="color: #777;">Belum ada komentar.</span>';
+    else comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`);
+    document.getElementById('modal-comments-box').innerHTML = cHtml;
 
-        document.getElementById('detail-modal').style.display = 'flex';
-      } catch(err) {
-        console.error("Open detail error:", err);
-      }
+    document.getElementById('detail-modal').style.display = 'flex';
+  } catch(err) {
+    console.error("Open detail error:", err);
+  }
+}
+
+async function pressLike() {
+  if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
+  try {
+    let likes = safeParseArray(activePost.likes);
+    const idx = likes.indexOf(currentUser.uid);
+    if(idx > -1) likes.splice(idx, 1);
+    else likes.push(currentUser.uid);
+
+    if(!activePost.is_ad && !activePost.is_adsterra) {
+      await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
     }
+    activePost.likes = JSON.stringify(likes);
+    document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
+    renderFeed();
+  } catch(err) {
+    console.error("Like error:", err);
+  }
+}
 
-    async function pressLike() {
-      if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
-      try {
-        let likes = safeParseArray(activePost.likes);
-        const idx = likes.indexOf(currentUser.uid);
-        if(idx > -1) likes.splice(idx, 1);
-        else likes.push(currentUser.uid);
+async function submitComment() {
+  if(!currentUser || !activePost) { alert("Login dulu untuk berkomentar!"); return; }
+  const input = document.getElementById('modal-comment-input');
+  const text = input ? input.value.trim() : '';
+  if(!text) return;
 
-        if(!activePost.is_ad && !activePost.is_adsterra) {
-          await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
-        }
-        activePost.likes = JSON.stringify(likes);
-        document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
-        renderFeed();
-      } catch(err) {
-        console.error("Like error:", err);
-      }
+  try {
+    let comments = safeParseArray(activePost.comments);
+    comments.push({ name: currentUser.name, text: text });
+    if(!activePost.is_ad && !activePost.is_adsterra) {
+      await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
     }
+    activePost.comments = JSON.stringify(comments);
+    if(input) input.value = '';
 
-    async function submitComment() {
-      if(!currentUser || !activePost) { alert("Login dulu untuk berkomentar!"); return; }
-      const input = document.getElementById('modal-comment-input');
-      const text = input ? input.value.trim() : '';
-      if(!text) return;
+    let cHtml = '';
+    comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`);
+    document.getElementById('modal-comments-box').innerHTML = cHtml;
+    renderFeed();
+  } catch(err) {
+    console.error("Comment error:", err);
+  }
+}
 
-      try {
-        let comments = safeParseArray(activePost.comments);
-        comments.push({ name: currentUser.name, text: text });
-        if(!activePost.is_ad && !activePost.is_adsterra) {
-          await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
-        }
-        activePost.comments = JSON.stringify(comments);
-        if(input) input.value = '';
+async function pressDelete() {
+  if(!activePost || activePost.is_ad || activePost.is_adsterra || !confirm("Hapus postingan ini?")) return;
+  try {
+    await supabase.from('kverse_posts').delete().eq('id', activePost.id);
+    KVerseUI.closeModal();
+    renderFeed();
+    renderMyGallery();
+  } catch(err) {
+    console.error("Delete error:", err);
+  }
+}
 
-        let cHtml = '';
-        comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${c.name}:</strong> ${c.text}</div>`);
-        document.getElementById('modal-comments-box').innerHTML = cHtml;
-        renderFeed();
-      } catch(err) {
-        console.error("Comment error:", err);
-      }
+async function toggleAuth() {
+  try {
+    if(currentUser) {
+      if(confirm("Keluar akun?")) { await signOut(auth); currentUser = null; renderProfile(); renderLeaderboard(); }
+    } else {
+      await signInWithPopup(auth, provider);
     }
-
-    async function pressDelete() {
-      if(!activePost || activePost.is_ad || activePost.is_adsterra || !confirm("Hapus postingan ini?")) return;
-      try {
-        await supabase.from('kverse_posts').delete().eq('id', activePost.id);
-        KVerseUI.closeModal();
-        renderFeed();
-        renderMyGallery();
-      } catch(err) {
-        console.error("Delete error:", err);
-      }
-    }
-
-    async function toggleAuth() {
-      try {
-        if(currentUser) {
-          if(confirm("Keluar akun?")) { await signOut(auth); currentUser = null; renderProfile(); renderLeaderboard(); }
-        } else {
-          await signInWithPopup(auth, provider);
-        }
-      } catch(e) {
-        console.error("Auth error:", e);
-        alert("Gagal melakukan autentikasi.");
-      }
-    }
+  } catch(e) {
+    console.error("Auth error:", e);
+    alert("Gagal melakukan autentikasi.");
+  }
+}
   </script>
 </body>
 </html>
