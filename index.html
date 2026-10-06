@@ -51,9 +51,9 @@
     <!-- 1. TAB BERANDA -->
     <div id="view-feed" class="tab-view" style="display: flex;">
       <div style="background: rgb(22, 22, 22); border-radius: 10px; border: 1px solid rgb(38, 38, 38); margin-bottom: 12px; padding: 12px; width: 100%;">
-        <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 13px; height: 70px; margin-bottom: 8px; outline: none; padding: 8px; resize: none; width: 100%;"></textarea>
+        <textarea id="post-text" placeholder="Bagikan aktivitas atau momen seru hari ini..." maxlength="500" style="background: rgb(13, 13, 13); border-radius: 6px; border: 1px solid rgb(34, 34, 34); box-sizing: border-box; color: white; font-size: 13px; height: 70px; margin-bottom: 8px; outline: none; padding: 8px; resize: none; width: 100%;"></textarea>
         <div style="align-items: center; display: flex; justify-content: space-between; width: 100%;">
-          <input accept="image/*" id="post-file" style="display: none;" type="file" />
+          <input accept="image/jpeg,image/png,image/webp" id="post-file" style="display: none;" type="file" />
           <button id="select-img-btn" class="action-btn" style="background: rgb(34, 34, 34); border-radius: 6px; border: 1px solid rgb(51, 51, 51); color: #00ffcc; font-size: 12px; padding: 6px 12px;">🖼 Pilih Foto</button>
           <button id="submit-post-btn" class="action-btn" style="background: rgb(0, 255, 204); border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 6px 16px;">Posting</button>
         </div>
@@ -82,7 +82,7 @@
           <div id="avatar-trigger" class="action-btn" style="position: relative; flex-shrink: 0;" title="Ketuk ganti foto">
             <img id="my-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" style="border-radius: 50%; border: 2px solid rgb(255, 193, 7); height: 50px; object-fit: cover; width: 50px;" />
           </div>
-          <input accept="image/*" id="avatar-file-input" style="display: none;" type="file" />
+          <input accept="image/jpeg,image/png,image/webp" id="avatar-file-input" style="display: none;" type="file" />
           <div style="min-width: 0; flex: 1;">
             <h4 id="my-name" style="color: #ffc107; font-size: 14px; margin: 0px 0px 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Tamu (Belum Login)</h4>
             <span id="my-id" style="color: #00ffcc; display: block; font-size: 11px; font-weight: bold;">ID: #KV-000000</span>
@@ -109,7 +109,7 @@
       <div style="color: #aaa; font-size: 12px; font-weight: bold; margin-bottom: 4px;">Komentar:</div>
       <div id="modal-comments-box" style="background: #131313; border-radius: 6px; display: flex; flex-direction: column; font-size: 12px; gap: 6px; max-height: 120px; overflow-y: auto; padding: 8px; margin-bottom: 10px;"></div>
       <div style="display: flex; gap: 6px;">
-        <input id="modal-comment-input" placeholder="Tulis komentar..." style="background: #131313; border-radius: 6px; border: 1px solid #333; color: white; flex: 1; font-size: 12px; padding: 8px; outline: none;" type="text" />
+        <input id="modal-comment-input" maxlength="250" placeholder="Tulis komentar..." style="background: #131313; border-radius: 6px; border: 1px solid #333; color: white; flex: 1; font-size: 12px; padding: 8px; outline: none;" type="text" />
         <button id="modal-comment-submit-btn" class="action-btn" style="background: #00ffcc; border: none; border-radius: 6px; color: black; font-size: 12px; font-weight: bold; padding: 8px 12px;">Kirim</button>
       </div>
     </div>
@@ -226,6 +226,18 @@
 
     async function uploadToSupabaseStorage(file, folder = 'posts') {
       if (!file) return '';
+      
+      // Validasi ekstensi/tipe file ketat untuk keamanan
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error("Format file harus berupa JPG, PNG, atau WebP!");
+      }
+
+      // Validasi ukuran maksimal file (3 MB)
+      if (file.size > 3 * 1024 * 1024) {
+        throw new Error("Ukuran file maksimal adalah 3 MB!");
+      }
+
       if (currentUser && !isUserOwner(currentUser)) {
         const uploadedCount = await checkUserPhotoCount(currentUser.uid);
         if (uploadedCount >= 50) {
@@ -247,63 +259,6 @@
         .getPublicUrl(fileName);
 
       return publicUrl;
-    }
-
-    function startOwnerAutoLike() {
-      const intervalWaktu = 5 * 60 * 1000;
-      setInterval(async () => {
-        try {
-          if (!supabase) return;
-          let { data: posts, error } = await supabase.from('kverse_posts').select('*');
-          if (error || !posts) return;
-          for (let p of posts) {
-            if (p.author_name && (p.author_name.includes('Kialdevaro') || p.author_name.includes('Owner'))) {
-              let likes = safeParseArray(p.likes);
-              const botUid = 'bot-auto-' + Math.floor(Math.random() * 50);
-              if (!likes.includes(botUid)) {
-                likes.push(botUid);
-                await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', p.id);
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Auto-like error:", err);
-        }
-      }, intervalWaktu);
-    }
-
-    // Bot Papan Skor: Tambah 50-200 XP setiap 24 jam (Kecuali Owner)
-    function startLeaderboardBot() {
-      const checkInterval = 60 * 1000; 
-      setInterval(async () => {
-        try {
-          if (!supabase) return;
-          const lastUpdateKey = 'kverse_last_lb_bot_update';
-          const lastUpdate = localStorage.getItem(lastUpdateKey);
-          const now = Date.now();
-          const twentyFourHours = 24 * 60 * 60 * 1000;
-
-          if (!lastUpdate || (now - parseInt(lastUpdate)) >= twentyFourHours) {
-            let { data: users, error } = await supabase.from('kverse_users').select('*');
-            if (error || !users || users.length === 0) return;
-
-            for (let u of users) {
-              if (u.email === OWNER_EMAIL || u.friendId === OWNER_FRIEND_ID) continue;
-              const addedXp = Math.floor(Math.random() * 151) + 50; 
-              const newXp = (u.xp || 0) + addedXp;
-              await supabase.from('kverse_users').update({ xp: newXp }).eq('uid', u.uid);
-            }
-
-            localStorage.setItem(lastUpdateKey, now.toString());
-            const activeTab = localStorage.getItem('kverse_active_tab');
-            if (activeTab === 'rank') {
-              renderLeaderboard();
-            }
-          }
-        } catch (err) {
-          console.error("Leaderboard bot error:", err);
-        }
-      }, checkInterval);
     }
           window.KVerseUI = {
       switchTab: function(tab) {
@@ -362,8 +317,6 @@
         const savedTab = localStorage.getItem('kverse_active_tab') || 'feed';
         KVerseUI.switchTab(savedTab);
         
-        startOwnerAutoLike();
-        startLeaderboardBot();
         initRealtimeSubscription();
         
         const postFile = document.getElementById('post-file');
@@ -620,9 +573,8 @@
       } finally {
         isLoadingFeed = false;
       }
-    }
-
-    async function renderLeaderboard() {
+      }
+          async function renderLeaderboard() {
       const rankBox = document.getElementById('rank-box');
       if (!rankBox) return;
       try {
@@ -716,6 +668,15 @@
 
     async function submitPost() {
       if (!currentUser) { alert("Silakan Login terlebih dahulu!"); KVerseUI.switchTab('profile'); return; }
+      
+      const lastPostKey = 'kverse_last_post_' + currentUser.uid;
+      const lastTime = parseInt(localStorage.getItem(lastPostKey) || '0');
+      const now = Date.now();
+      if (now - lastTime < 15000) {
+        alert("Harap tunggu 15 detik sebelum membuat postingan berikutnya.");
+        return;
+      }
+
       const textEl = document.getElementById('post-text');
       const text = textEl ? textEl.value.trim() : '';
       if (!text && !selectedImageFile) { alert("Tulis sesuatu atau pilih foto."); return; }
@@ -736,6 +697,7 @@
           comments: JSON.stringify([])
         }]);
 
+        localStorage.setItem(lastPostKey, now.toString());
         if(textEl) textEl.value = '';
         selectedImageFile = null;
         const previewBox = document.getElementById('preview-box');
@@ -772,85 +734,85 @@
           delBtn.style.display = 'none';
         }
 
-            const comments = safeParseArray(activePost.comments);
-    let cHtml = '';
-    if(comments.length === 0) cHtml = '<span style="color: #777;">Belum ada komentar.</span>';
-    else comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`);
-    document.getElementById('modal-comments-box').innerHTML = cHtml;
+        const comments = safeParseArray(activePost.comments);
+        let cHtml = '';
+        if(comments.length === 0) cHtml = '<span style="color: #777;">Belum ada komentar.</span>';
+        else comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`);
+        document.getElementById('modal-comments-box').innerHTML = cHtml;
 
-    document.getElementById('detail-modal').style.display = 'flex';
-  } catch(err) {
-    console.error("Open detail error:", err);
-  }
-}
-
-async function pressLike() {
-  if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
-  try {
-    let likes = safeParseArray(activePost.likes);
-    const idx = likes.indexOf(currentUser.uid);
-    if(idx > -1) likes.splice(idx, 1);
-    else likes.push(currentUser.uid);
-
-    if(!activePost.is_ad && !activePost.is_adsterra) {
-      await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
+        document.getElementById('detail-modal').style.display = 'flex';
+      } catch(err) {
+        console.error("Open detail error:", err);
+      }
     }
-    activePost.likes = JSON.stringify(likes);
-    document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
-    renderFeed();
-  } catch(err) {
-    console.error("Like error:", err);
-  }
-}
 
-async function submitComment() {
-  if(!currentUser || !activePost) { alert("Login dulu untuk berkomentar!"); return; }
-  const input = document.getElementById('modal-comment-input');
-  const text = input ? input.value.trim() : '';
-  if(!text) return;
+    async function pressLike() {
+      if(!currentUser || !activePost) { alert("Login dulu untuk menyukai!"); return; }
+      try {
+        let likes = safeParseArray(activePost.likes);
+        const idx = likes.indexOf(currentUser.uid);
+        if(idx > -1) likes.splice(idx, 1);
+        else likes.push(currentUser.uid);
 
-  try {
-    let comments = safeParseArray(activePost.comments);
-    comments.push({ name: currentUser.name, text: text });
-    if(!activePost.is_ad && !activePost.is_adsterra) {
-      await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
+        if(!activePost.is_ad && !activePost.is_adsterra) {
+          await supabase.from('kverse_posts').update({ likes: JSON.stringify(likes) }).eq('id', activePost.id);
+        }
+        activePost.likes = JSON.stringify(likes);
+        document.getElementById('modal-like-btn').innerHTML = `❤️ Suka (${likes.length})`;
+        renderFeed();
+      } catch(err) {
+        console.error("Like error:", err);
+      }
     }
-    activePost.comments = JSON.stringify(comments);
-    if(input) input.value = '';
 
-    let cHtml = '';
-    comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`);
-    document.getElementById('modal-comments-box').innerHTML = cHtml;
-    renderFeed();
-  } catch(err) {
-    console.error("Comment error:", err);
-  }
-}
+    async function submitComment() {
+      if(!currentUser || !activePost) { alert("Login dulu untuk berkomentar!"); return; }
+      const input = document.getElementById('modal-comment-input');
+      const text = input ? input.value.trim() : '';
+      if(!text) return;
 
-async function pressDelete() {
-  if(!activePost || activePost.is_ad || activePost.is_adsterra || !confirm("Hapus postingan ini?")) return;
-  try {
-    await supabase.from('kverse_posts').delete().eq('id', activePost.id);
-    KVerseUI.closeModal();
-    renderFeed();
-    renderMyGallery();
-  } catch(err) {
-    console.error("Delete error:", err);
-  }
-}
+      try {
+        let comments = safeParseArray(activePost.comments);
+        comments.push({ name: currentUser.name, text: text });
+        if(!activePost.is_ad && !activePost.is_adsterra) {
+          await supabase.from('kverse_posts').update({ comments: JSON.stringify(comments) }).eq('id', activePost.id);
+        }
+        activePost.comments = JSON.stringify(comments);
+        if(input) input.value = '';
 
-async function toggleAuth() {
-  try {
-    if(currentUser) {
-      if(confirm("Keluar akun?")) { await signOut(auth); currentUser = null; renderProfile(); renderLeaderboard(); }
-    } else {
-      await signInWithPopup(auth, provider);
+        let cHtml = '';
+        comments.forEach(c => cHtml += `<div style="border-bottom: 1px solid #222; padding-bottom: 4px;"><strong style="color: #00ffcc;">${escapeHtml(c.name)}:</strong> ${escapeHtml(c.text)}</div>`);
+        document.getElementById('modal-comments-box').innerHTML = cHtml;
+        renderFeed();
+      } catch(err) {
+        console.error("Comment error:", err);
+      }
     }
-  } catch(e) {
-    console.error("Auth error:", e);
-    alert("Gagal melakukan autentikasi.");
-  }
-}
+
+    async function pressDelete() {
+      if(!activePost || activePost.is_ad || activePost.is_adsterra || !confirm("Hapus postingan ini?")) return;
+      try {
+        await supabase.from('kverse_posts').delete().eq('id', activePost.id);
+        KVerseUI.closeModal();
+        renderFeed();
+        renderMyGallery();
+      } catch(err) {
+        console.error("Delete error:", err);
+      }
+    }
+
+    async function toggleAuth() {
+      try {
+        if(currentUser) {
+          if(confirm("Keluar akun?")) { await signOut(auth); currentUser = null; renderProfile(); renderLeaderboard(); }
+        } else {
+          await signInWithPopup(auth, provider);
+        }
+      } catch(e) {
+        console.error("Auth error:", e);
+        alert("Gagal melakukan autentikasi.");
+      }
+    }
   </script>
 </body>
 </html>
